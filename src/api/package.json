@@ -1,0 +1,18 @@
+{
+  "name": "story-time-api",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "start": "func start",
+    "prestart": "npm run build"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.0.0",
+    "@azure/data-tables": "^13.0.0",
+    "@azure/storage-blob": "^12.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
