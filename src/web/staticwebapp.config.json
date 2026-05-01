@@ -25,6 +25,11 @@
       }
     }
   },
+  "mimeTypes": {
+    ".js": "application/javascript",
+    ".mjs": "application/javascript",
+    ".css": "text/css"
+  },
   "navigationFallback": {
     "rewrite": "/index.html",
     "exclude": ["/api/*", "*.{css,js,png,jpg,svg,ico,woff,woff2}"]
