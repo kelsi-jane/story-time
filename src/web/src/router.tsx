@@ -15,4 +15,5 @@ export const router = createBrowserRouter([
   { path: '/admin/stories/new', element: <StoryNew /> },
   { path: '/admin/stories/:slug', element: <StoryEdit /> },
   { path: '/admin/stories/:slug/chapters/new', element: <ChapterNew /> },
+  { path: '/admin/stories/:slug/chapters/:chapterId/edit', element: <ChapterNew /> },
 ]);

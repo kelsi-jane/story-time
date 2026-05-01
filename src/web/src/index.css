@@ -36,3 +36,269 @@ a:hover {
 .prose em {
   font-style: italic;
 }
+
+/* ── Page card — chapter reading surface ───────────────────────────────── */
+
+.page-card {
+  position: relative;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.07);
+  padding: 56px;
+  touch-action: pan-y;
+}
+
+@media (max-width: 600px) {
+  .page-card {
+    padding: 32px 24px 40px;
+  }
+}
+
+/* Folded bottom-right corner */
+.page-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(
+    225deg,
+    var(--color-surface-muted) 50%,
+    var(--color-background) 50%
+  );
+  border-top-left-radius: 3px;
+  box-shadow: -1px -1px 2px rgba(0, 0, 0, 0.06);
+}
+
+/* Chapter enter animations */
+@keyframes pageEnterRight {
+  from { transform: translateX(64px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+@keyframes pageEnterLeft {
+  from { transform: translateX(-64px); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+
+.page-enter-right { animation: pageEnterRight 0.28s ease-out; }
+.page-enter-left  { animation: pageEnterLeft  0.28s ease-out; }
+
+/* ── Admin form primitives ─────────────────────────────────────────────── */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.field .hint {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.input {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 8px 12px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.1s;
+}
+
+.input:focus {
+  border-color: var(--color-accent);
+}
+
+.input::placeholder {
+  color: var(--color-border);
+}
+
+textarea.input {
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.btn {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: opacity 0.1s;
+}
+
+.btn:hover {
+  opacity: 0.85;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: var(--color-accent);
+  color: #ffffff;
+}
+
+.btn-secondary {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+}
+
+.btn-danger {
+  background: var(--color-danger);
+  color: #ffffff;
+}
+
+/* ── Tag input ──────────────────────────────────────────────────────────── */
+
+.tag-input {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 6px 10px;
+  cursor: text;
+  transition: border-color 0.1s;
+}
+
+.tag-input:focus-within {
+  border-color: var(--color-accent);
+}
+
+.tag-input-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-accent);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+.tag-input-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+}
+
+.tag-input-field {
+  border: none;
+  outline: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: var(--color-text-primary);
+  background: transparent;
+  min-width: 140px;
+  flex: 1;
+}
+
+.tag-input-field::placeholder {
+  color: var(--color-border);
+}
+
+/* ── Markdown editor ────────────────────────────────────────────────────── */
+
+.mde {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.mde-tabs {
+  display: none;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-muted);
+}
+
+.mde-tab {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 16px;
+  background: none;
+  border: none;
+  border-right: 1px solid var(--color-border);
+  cursor: pointer;
+  color: var(--color-text-secondary);
+}
+
+.mde-tab.active {
+  color: var(--color-accent);
+  background: var(--color-surface);
+}
+
+.mde-panes {
+  display: flex;
+  height: 480px;
+}
+
+.mde-input {
+  flex: 1;
+  padding: 20px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  border: none;
+  border-right: 1px solid var(--color-border);
+  resize: none;
+  outline: none;
+}
+
+.mde-input:focus {
+  background: var(--color-background);
+}
+
+.mde-preview {
+  flex: 1;
+  padding: 20px 24px;
+  overflow-y: auto;
+  background: var(--color-surface-muted);
+  font-family: 'Lora', serif;
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--color-text-primary);
+}
+
+.mde-empty {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  font-style: normal;
+}
+
+@media (max-width: 767px) {
+  .mde-tabs { display: flex; }
+  .mde-panes { height: 400px; }
+  .mde-hide-mobile { display: none !important; }
+}

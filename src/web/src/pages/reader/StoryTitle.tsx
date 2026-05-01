@@ -43,6 +43,7 @@ export default function StoryTitle() {
 
       <div style={styles.meta}>
         <h1 style={styles.title}>{story.title}</h1>
+        {story.subtitle && <p style={styles.subtitle}>{story.subtitle}</p>}
 
         {story.description && (
           <p style={styles.description}>{story.description}</p>
@@ -114,6 +115,14 @@ const styles: Record<string, React.CSSProperties> = {
     color: 'var(--color-text-primary)',
     letterSpacing: '-0.4px',
     lineHeight: 1.2,
+  },
+  subtitle: {
+    fontFamily: 'Inter, sans-serif',
+    fontWeight: 400,
+    fontSize: 18,
+    color: 'var(--color-text-secondary)',
+    letterSpacing: '-0.2px',
+    marginTop: -8,
   },
   description: {
     fontFamily: 'Lora, serif',

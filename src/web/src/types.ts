@@ -10,6 +10,7 @@ export interface Story {
   id: string;
   title: string;
   slug: string;
+  subtitle?: string;
   description?: string;
   tags: string[];
   seriesSlug?: string;

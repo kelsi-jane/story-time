@@ -1,37 +1,169 @@
-import type { Story } from '../types';
+import type { Story, Chapter } from '../types';
 
-const MOCK_STORIES: Story[] = [
+const INITIAL_STORIES: Story[] = [
   {
     id: '1',
     title: 'The Silver Thread',
     slug: 'the-silver-thread',
     description: 'In a village where dreams are woven into cloth, a girl discovers a single silver thread that connects her to a boy she\'s never met.',
     tags: ['fantasy', 'romance'],
-    seriesSlug: undefined,
-    seriesOrder: undefined,
+    seriesSlug: 'the-silver-thread',
+    seriesOrder: 1,
     publishedAt: '2026-01-15T00:00:00Z',
     chapters: [
-      {
-        id: 'ch1',
-        storyId: '1',
-        title: 'The Loom at Dawn',
-        order: 1,
-        blobPath: '/content/the-silver-thread/chapter-1.md',
-      },
+      { id: 'ch1',  storyId: '1', title: 'The Loom at Dawn',      order: 1, blobPath: '/content/the-silver-thread/chapter-1.md' },
+      { id: 'ch2',  storyId: '1', title: 'The Thread Remembers',   order: 2, blobPath: '/content/the-silver-thread/chapter-2.md' },
+    ],
+  },
+  {
+    id: '2',
+    title: 'The Silver Thread',
+    subtitle: 'Wedding Bells',
+    slug: 'the-silver-thread-wedding-bells',
+    description: 'An invitation arrives on silver cloth, and Mara must travel north to witness a wedding that will change everything she thought she understood about the thread.',
+    tags: ['fantasy', 'romance'],
+    seriesSlug: 'the-silver-thread',
+    seriesOrder: 2,
+    publishedAt: '2026-03-01T00:00:00Z',
+    chapters: [
+      { id: 'ch2-1', storyId: '2', title: 'An Invitation Arrives', order: 1, blobPath: '/content/the-silver-thread-wedding-bells/chapter-1.md' },
+      { id: 'ch2-2', storyId: '2', title: 'Three Days North',      order: 2, blobPath: '/content/the-silver-thread-wedding-bells/chapter-2.md' },
     ],
   },
 ];
 
+const STORIES_KEY = 'st-mock-stories';
+const CONTENT_KEY = 'st-mock-content';
+
+function loadStories(): Story[] {
+  try {
+    const raw = localStorage.getItem(STORIES_KEY);
+    if (raw) return JSON.parse(raw) as Story[];
+  } catch {}
+  return [...INITIAL_STORIES];
+}
+
+function saveStories(s: Story[]): void {
+  localStorage.setItem(STORIES_KEY, JSON.stringify(s));
+}
+
+function loadContent(): Map<string, string> {
+  try {
+    const raw = localStorage.getItem(CONTENT_KEY);
+    if (raw) return new Map(JSON.parse(raw) as [string, string][]);
+  } catch {}
+  return new Map();
+}
+
+function saveContent(m: Map<string, string>): void {
+  localStorage.setItem(CONTENT_KEY, JSON.stringify([...m]));
+}
+
+let stories: Story[] = loadStories();
+const mockContent: Map<string, string> = loadContent();
+
+// ── Read ────────────────────────────────────────────────────────────────────
+
 export async function getStories(): Promise<Story[]> {
-  return MOCK_STORIES;
+  return stories;
 }
 
 export async function getStory(slug: string): Promise<Story | null> {
-  return MOCK_STORIES.find((s) => s.slug === slug) ?? null;
+  return stories.find((s) => s.slug === slug) ?? null;
 }
 
 export async function getChapterContent(blobPath: string): Promise<string> {
+  if (blobPath.startsWith('mock://')) {
+    return mockContent.get(blobPath.slice('mock://'.length)) ?? '';
+  }
   const res = await fetch(blobPath);
   if (!res.ok) throw new Error(`Failed to load chapter: ${res.status}`);
   return res.text();
+}
+
+// ── Stories ─────────────────────────────────────────────────────────────────
+
+export async function createStory(data: Omit<Story, 'id' | 'chapters'>): Promise<Story> {
+  const story: Story = { ...data, id: crypto.randomUUID(), chapters: [] };
+  stories = [...stories, story];
+  saveStories(stories);
+  return story;
+}
+
+export async function updateStory(slug: string, data: Partial<Omit<Story, 'id' | 'slug' | 'chapters'>>): Promise<Story> {
+  stories = stories.map((s) => (s.slug === slug ? { ...s, ...data } : s));
+  saveStories(stories);
+  return stories.find((s) => s.slug === slug)!;
+}
+
+export async function deleteStory(slug: string): Promise<void> {
+  stories = stories.filter((s) => s.slug !== slug);
+  saveStories(stories);
+}
+
+// ── Chapters ─────────────────────────────────────────────────────────────────
+
+export async function createChapter(
+  storySlug: string,
+  data: { title: string; order: number },
+  content: string,
+): Promise<Chapter> {
+  const story = stories.find((s) => s.slug === storySlug);
+  if (!story) throw new Error('Story not found');
+  const id = `ch-${Date.now()}`;
+  const chapter: Chapter = { id, storyId: story.id, title: data.title, order: data.order, blobPath: `mock://${id}` };
+  mockContent.set(id, content);
+  saveContent(mockContent);
+  stories = stories.map((s) =>
+    s.slug === storySlug ? { ...s, chapters: [...s.chapters, chapter] } : s,
+  );
+  saveStories(stories);
+  return chapter;
+}
+
+export async function updateChapter(
+  storySlug: string,
+  chapterId: string,
+  data: { title: string },
+  content: string,
+): Promise<Chapter> {
+  stories = stories.map((s) => {
+    if (s.slug !== storySlug) return s;
+    return { ...s, chapters: s.chapters.map((c) => c.id === chapterId ? { ...c, title: data.title } : c) };
+  });
+  const contentKey = (() => {
+    const ch = stories.find((s) => s.slug === storySlug)?.chapters.find((c) => c.id === chapterId);
+    if (!ch) return chapterId;
+    if (ch.blobPath.startsWith('mock://')) return ch.blobPath.slice('mock://'.length);
+    // For file-backed chapters, store under the chapterId key and update blobPath to mock://
+    stories = stories.map((s) => {
+      if (s.slug !== storySlug) return s;
+      return { ...s, chapters: s.chapters.map((c) => c.id === chapterId ? { ...c, blobPath: `mock://${chapterId}` } : c) };
+    });
+    return chapterId;
+  })();
+  mockContent.set(contentKey, content);
+  saveContent(mockContent);
+  saveStories(stories);
+  return stories.find((s) => s.slug === storySlug)!.chapters.find((c) => c.id === chapterId)!;
+}
+
+export async function deleteChapter(storySlug: string, chapterId: string): Promise<void> {
+  stories = stories.map((s) => {
+    if (s.slug !== storySlug) return s;
+    return { ...s, chapters: s.chapters.filter((c) => c.id !== chapterId) };
+  });
+  saveStories(stories);
+}
+
+export async function reorderChapters(storySlug: string, orderedIds: string[]): Promise<void> {
+  stories = stories.map((s) => {
+    if (s.slug !== storySlug) return s;
+    const reordered = orderedIds.map((id, index) => ({
+      ...s.chapters.find((c) => c.id === id)!,
+      order: index + 1,
+    }));
+    return { ...s, chapters: reordered };
+  });
+  saveStories(stories);
 }

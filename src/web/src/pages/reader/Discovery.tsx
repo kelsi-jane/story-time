@@ -43,7 +43,10 @@ export default function Discovery() {
               <Link to={`/stories/${story.slug}`} style={styles.cardLink}>
                 <div style={styles.cardCover} aria-hidden="true" />
                 <div style={styles.cardBody}>
-                  <h2 style={styles.cardTitle}>{story.title}</h2>
+                  <h2 style={styles.cardTitle}>
+                    {story.title}
+                    {story.subtitle && <span style={styles.cardSubtitle}>: {story.subtitle}</span>}
+                  </h2>
                   {story.description && (
                     <p style={styles.cardDescription}>{story.description}</p>
                   )}
@@ -123,6 +126,10 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 15,
     color: 'var(--color-text-primary)',
     lineHeight: 1.3,
+  },
+  cardSubtitle: {
+    fontWeight: 400,
+    color: 'var(--color-text-secondary)',
   },
   cardDescription: {
     fontFamily: 'Inter, sans-serif',
