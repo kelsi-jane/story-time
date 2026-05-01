@@ -1,0 +1,174 @@
+# Deployment Guide
+
+## Local Development
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) 18 or later
+- npm 9 or later (included with Node.js)
+
+### Frontend only (current)
+
+```bash
+cd src/web
+npm install
+npm run dev
+```
+
+App is available at `http://localhost:5173`. Routes, auth protection, and API calls are not emulated locally — the reader surfaces run entirely against mock data.
+
+### Full stack (once API is wired)
+
+Additional prerequisites:
+
+- [Azure Functions Core Tools v4](https://learn.microsoft.com/en-us/azure/azure-functions/functions-run-local)
+- [Azurite](https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azurite) — Azure Storage emulator
+
+**1. Start Azurite**
+
+```bash
+cd src/api
+npm install
+npx azurite --location .azurite --silent
+```
+
+Or use the [Azurite VS Code extension](https://marketplace.visualstudio.com/items?itemName=Azurite.azurite) — right-click the status bar item to start.
+
+**2. Configure local API settings**
+
+Create `src/api/local.settings.json` (not committed — contains secrets):
+
+```json
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "AZURE_STORAGE_CONNECTION_STRING": "UseDevelopmentStorage=true"
+  }
+}
+```
+
+**3. Start the API**
+
+```bash
+cd src/api
+npm run start
+```
+
+Functions are available at `http://localhost:7071/api/`.
+
+**4. Start the frontend**
+
+```bash
+cd src/web
+npm run dev
+```
+
+App is available at `http://localhost:5173`. The Vite dev server proxies `/api/*` requests to the Functions host.
+
+---
+
+## Production Deployment
+
+### Prerequisites
+
+- An [Azure account](https://azure.microsoft.com/free/)
+- [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) installed and logged in (`az login`)
+- A GitHub account with access to this repository
+
+### 1. Create an Azure Storage Account
+
+```bash
+az group create --name story-time-rg --location eastus
+
+az storage account create \
+  --name storytimestorage \
+  --resource-group story-time-rg \
+  --sku Standard_LRS \
+  --kind StorageV2
+```
+
+Note the connection string — you'll need it in step 4:
+
+```bash
+az storage account show-connection-string \
+  --name storytimestorage \
+  --resource-group story-time-rg \
+  --query connectionString \
+  --output tsv
+```
+
+### 2. Create the Azure Static Web App
+
+```bash
+az staticwebapp create \
+  --name story-time \
+  --resource-group story-time-rg \
+  --source https://github.com/<your-org>/story-time \
+  --branch main \
+  --app-location src/web \
+  --api-location src/api \
+  --output-location dist \
+  --login-with-github
+```
+
+The CLI will prompt for GitHub authorisation and automatically create the GitHub Actions workflow secret `AZURE_STATIC_WEB_APPS_API_TOKEN` in your repository.
+
+### 3. Register a GitHub OAuth App
+
+1. Go to [github.com/settings/developers](https://github.com/settings/developers) → **OAuth Apps** → **New OAuth App**
+2. Fill in:
+   - **Application name:** Story Time
+   - **Homepage URL:** `https://<your-swa-hostname>.azurestaticapps.net`
+   - **Authorization callback URL:** `https://<your-swa-hostname>.azurestaticapps.net/.auth/login/github/callback`
+3. Click **Register application**
+4. Copy the **Client ID** and generate a **Client Secret**
+
+### 4. Set application settings
+
+```bash
+az staticwebapp appsettings set \
+  --name story-time \
+  --resource-group story-time-rg \
+  --setting-names \
+    GITHUB_CLIENT_ID="<your-client-id>" \
+    GITHUB_CLIENT_SECRET="<your-client-secret>" \
+    AZURE_STORAGE_CONNECTION_STRING="<your-connection-string>"
+```
+
+### 5. Deploy
+
+Push to `main`. GitHub Actions picks it up automatically:
+
+```bash
+git push origin main
+```
+
+The workflow in `.github/workflows/azure-static-web-apps.yml` builds and deploys both the frontend and API. Deployment typically takes 2–3 minutes.
+
+### 6. Verify
+
+- Visit `https://<your-swa-hostname>.azurestaticapps.net` — reader surfaces should load
+- Visit `/admin` — should redirect to GitHub OAuth login
+- Authenticate and confirm the admin index loads
+
+---
+
+## Environment Variables Reference
+
+| Variable | Where set | Purpose |
+|---|---|---|
+| `GITHUB_CLIENT_ID` | SWA app settings | GitHub OAuth app client ID |
+| `GITHUB_CLIENT_SECRET` | SWA app settings | GitHub OAuth app client secret |
+| `AZURE_STORAGE_CONNECTION_STRING` | SWA app settings | Blob + Table Storage access |
+| `AzureWebJobsStorage` | `local.settings.json` | Functions local storage binding |
+| `AZURE_STATIC_WEB_APPS_API_TOKEN` | GitHub repository secret | SWA deployment token (set automatically) |
+
+---
+
+## Notes
+
+- `local.settings.json` is git-ignored — never commit it
+- `.azurite/` is git-ignored — local storage emulator data
+- The SWA free tier supports one deployment environment; pull request preview environments require Standard tier
