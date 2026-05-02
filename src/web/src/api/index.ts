@@ -74,6 +74,7 @@ const INITIAL_ADMINS: AdminUser[] = (import.meta.env.VITE_INITIAL_ADMIN_USERNAME
     isPrimary: index === 0,
     addedAt: '2026-01-01T00:00:00Z',
   }));
+console.log('initial_admins', INITIAL_ADMINS);
 
 const ADMINS_KEY = 'st-mock-admins';
 
@@ -82,6 +83,7 @@ function loadAdmins(): AdminUser[] {
     const raw = localStorage.getItem(ADMINS_KEY);
     if (raw) return JSON.parse(raw) as AdminUser[];
   } catch {}*/
+  console.log('loadAdmins, [...INITIAL_ADMINS];
   return [...INITIAL_ADMINS];
 }
 
@@ -96,6 +98,7 @@ export async function getAdmins(): Promise<AdminUser[]> {
 }
 
 export async function isAdminUser(username: string): Promise<AdminUser | null> {
+  console.log('isAdminUser', username, admins);
   return admins.find((a) => a.username.toLowerCase() === username.toLowerCase()) ?? null;
 }
 
