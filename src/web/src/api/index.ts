@@ -78,10 +78,10 @@ const INITIAL_ADMINS: AdminUser[] = (import.meta.env.VITE_INITIAL_ADMIN_USERNAME
 const ADMINS_KEY = 'st-mock-admins';
 
 function loadAdmins(): AdminUser[] {
-  try {
+  /*try {
     const raw = localStorage.getItem(ADMINS_KEY);
     if (raw) return JSON.parse(raw) as AdminUser[];
-  } catch {}
+  } catch {}*/
   return [...INITIAL_ADMINS];
 }
 
