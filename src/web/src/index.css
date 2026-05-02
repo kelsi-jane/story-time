@@ -167,6 +167,88 @@ textarea.input {
   color: #ffffff;
 }
 
+/* ── Admin shared ───────────────────────────────────────────────────────── */
+
+.admin-page-heading {
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 22px;
+  color: var(--color-text-primary);
+  letter-spacing: -0.3px;
+}
+
+.admin-subheading {
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  color: var(--color-text-primary);
+}
+
+.admin-divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: 40px 0;
+  border: none;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-table th {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-align: left;
+  padding: 0 12px 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.admin-table td {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: var(--color-text-primary);
+  padding: 14px 12px;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.admin-table td.muted {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.admin-table td.actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.badge {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 4px;
+  padding: 2px 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+}
+
+.badge-accent {
+  color: var(--color-accent);
+}
+
+.badge-success {
+  color: var(--color-success);
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
 /* ── Tag input ──────────────────────────────────────────────────────────── */
 
 .tag-input {

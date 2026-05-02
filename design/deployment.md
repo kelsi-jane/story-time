@@ -9,6 +9,16 @@
 
 ### Frontend only (current)
 
+**1. Create your local env file**
+
+```bash
+cp src/web/.env.example src/web/.env.local
+```
+
+Edit `src/web/.env.local` and set `VITE_DEV_AUTH_USERNAME` to your GitHub username. This mocks authentication locally — without it you'll be redirected to `/unauthorized` when visiting `/admin`.
+
+**2. Start the dev server**
+
 ```bash
 cd src/web
 npm install

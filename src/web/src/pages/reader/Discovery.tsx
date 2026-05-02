@@ -30,7 +30,7 @@ export default function Discovery() {
   return (
     <div style={styles.page}>
       <header style={styles.header}>
-        <h1 style={styles.siteTitle}>Story Time</h1>
+        <h1 style={styles.siteTitle}>Wistful.Me</h1>
         <p style={styles.siteTagline}>Stories worth staying up for.</p>
       </header>
 
