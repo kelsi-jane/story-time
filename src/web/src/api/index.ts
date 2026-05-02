@@ -83,7 +83,7 @@ function loadAdmins(): AdminUser[] {
     const raw = localStorage.getItem(ADMINS_KEY);
     if (raw) return JSON.parse(raw) as AdminUser[];
   } catch {}*/
-  console.log('loadAdmins, [...INITIAL_ADMINS]);
+  console.log('loadAdmins', [...INITIAL_ADMINS]);
   return [...INITIAL_ADMINS];
 }
 
