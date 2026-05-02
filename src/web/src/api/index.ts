@@ -64,9 +64,16 @@ const mockContent: Map<string, string> = loadContent();
 
 // ── Admin whitelist ──────────────────────────────────────────────────────────
 
-const INITIAL_ADMINS: AdminUser[] = [
-  { id: 'admin-1', username: 'kelsi-jane', isPrimary: true, addedAt: '2026-01-01T00:00:00Z' },
-];
+const INITIAL_ADMINS: AdminUser[] = (import.meta.env.VITE_INITIAL_ADMIN_USERNAMES as string | undefined ?? '')
+  .split(',')
+  .map((u) => u.trim())
+  .filter(Boolean)
+  .map((username, index) => ({
+    id: `admin-seed-${index + 1}`,
+    username,
+    isPrimary: index === 0,
+    addedAt: '2026-01-01T00:00:00Z',
+  }));
 
 const ADMINS_KEY = 'st-mock-admins';
 
