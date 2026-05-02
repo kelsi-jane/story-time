@@ -1,3 +1,10 @@
+export interface AdminUser {
+  id: string;
+  username: string;  // GitHub username
+  isPrimary: boolean;
+  addedAt: string;
+}
+
 export interface Chapter {
   id: string;
   storyId: string;

@@ -1,4 +1,4 @@
-import type { Story, Chapter } from '../types';
+import type { Story, Chapter, AdminUser } from '../types';
 
 const INITIAL_STORIES: Story[] = [
   {
@@ -61,6 +61,61 @@ function saveContent(m: Map<string, string>): void {
 
 let stories: Story[] = loadStories();
 const mockContent: Map<string, string> = loadContent();
+
+// ── Admin whitelist ──────────────────────────────────────────────────────────
+
+const INITIAL_ADMINS: AdminUser[] = [
+  { id: 'admin-1', username: 'kelsi-jane', isPrimary: true, addedAt: '2026-01-01T00:00:00Z' },
+];
+
+const ADMINS_KEY = 'st-mock-admins';
+
+function loadAdmins(): AdminUser[] {
+  try {
+    const raw = localStorage.getItem(ADMINS_KEY);
+    if (raw) return JSON.parse(raw) as AdminUser[];
+  } catch {}
+  return [...INITIAL_ADMINS];
+}
+
+function saveAdmins(a: AdminUser[]): void {
+  localStorage.setItem(ADMINS_KEY, JSON.stringify(a));
+}
+
+let admins: AdminUser[] = loadAdmins();
+
+export async function getAdmins(): Promise<AdminUser[]> {
+  return admins;
+}
+
+export async function isAdminUser(username: string): Promise<AdminUser | null> {
+  return admins.find((a) => a.username.toLowerCase() === username.toLowerCase()) ?? null;
+}
+
+export async function addAdmin(username: string): Promise<AdminUser> {
+  if (admins.find((a) => a.username.toLowerCase() === username.toLowerCase())) {
+    throw new Error('User is already an admin');
+  }
+  const admin: AdminUser = { id: crypto.randomUUID(), username, isPrimary: false, addedAt: new Date().toISOString() };
+  admins = [...admins, admin];
+  saveAdmins(admins);
+  return admin;
+}
+
+export async function removeAdmin(id: string): Promise<void> {
+  const target = admins.find((a) => a.id === id);
+  if (!target) throw new Error('Admin not found');
+  if (target.isPrimary) throw new Error('Cannot remove the primary admin');
+  admins = admins.filter((a) => a.id !== id);
+  saveAdmins(admins);
+}
+
+export async function transferPrimary(toId: string): Promise<void> {
+  const target = admins.find((a) => a.id === toId);
+  if (!target) throw new Error('Admin not found');
+  admins = admins.map((a) => ({ ...a, isPrimary: a.id === toId }));
+  saveAdmins(admins);
+}
 
 // ── Read ────────────────────────────────────────────────────────────────────
 
