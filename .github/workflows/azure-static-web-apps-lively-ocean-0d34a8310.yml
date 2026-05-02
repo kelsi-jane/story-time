@@ -27,6 +27,8 @@ jobs:
           api_location: src/api
           output_location: dist
           app_build_command: "npm install && npm run build"
+        env:
+          VITE_INITIAL_ADMIN_USERNAMES: ${{ vars.VITE_INITIAL_ADMIN_USERNAMES }}
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
