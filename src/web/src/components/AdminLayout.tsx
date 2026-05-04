@@ -8,12 +8,20 @@ interface Props {
 }
 
 export default function AdminLayout({ children, breadcrumb }: Props) {
-  const { isAdmin, isPrimary, loading } = useAuth();
+  const { user, isAdmin, isPrimary, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && !isAdmin) navigate('/unauthorized', { replace: true });
-  }, [loading, isAdmin, navigate]);
+    if (loading) return;
+    if (!user) {
+      // Not authenticated — send to GitHub login and return here afterwards
+      if (!import.meta.env.DEV) {
+        window.location.href = `/.auth/login/github?post_login_redirect_uri=${encodeURIComponent(window.location.pathname)}`;
+      }
+    } else if (!isAdmin) {
+      navigate('/unauthorized', { replace: true });
+    }
+  }, [loading, user, isAdmin, navigate]);
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: 'var(--color-background)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
