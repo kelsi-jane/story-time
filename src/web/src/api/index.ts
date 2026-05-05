@@ -1,4 +1,4 @@
-import type { Story, Chapter, AdminUser } from '../types';
+import type { Story, Chapter, AdminUser, Author } from '../types';
 
 const INITIAL_STORIES: Story[] = [
   {
@@ -93,6 +93,48 @@ function saveAdmins(a: AdminUser[]): void {
 
 let admins: AdminUser[] = loadAdmins();
 
+// ── Author profiles ──────────────────────────────────────────────────────────
+
+const AUTHORS_KEY = 'st-mock-authors';
+
+function loadAuthors(): Author[] {
+  try {
+    const raw = localStorage.getItem(AUTHORS_KEY);
+    if (raw) return JSON.parse(raw) as Author[];
+  } catch {}
+  return INITIAL_ADMINS.map((admin) => ({
+    githubUsername: admin.username,
+    fullName: '',
+    penName: admin.username,
+  }));
+}
+
+function saveAuthors(a: Author[]): void {
+  localStorage.setItem(AUTHORS_KEY, JSON.stringify(a));
+}
+
+let authors: Author[] = loadAuthors();
+
+export async function getAuthors(): Promise<Author[]> {
+  const adminUsernames = new Set(admins.map((a) => a.username.toLowerCase()));
+  return authors.filter((a) => adminUsernames.has(a.githubUsername.toLowerCase()));
+}
+
+export async function getAuthor(username: string): Promise<Author | null> {
+  return authors.find((a) => a.githubUsername.toLowerCase() === username.toLowerCase()) ?? null;
+}
+
+export async function updateAuthor(username: string, data: { fullName: string; penName: string }): Promise<Author> {
+  const penName = data.penName.trim() || data.fullName.trim();
+  authors = authors.map((a) =>
+    a.githubUsername.toLowerCase() === username.toLowerCase()
+      ? { ...a, fullName: data.fullName.trim(), penName }
+      : a,
+  );
+  saveAuthors(authors);
+  return authors.find((a) => a.githubUsername.toLowerCase() === username.toLowerCase())!;
+}
+
 export async function getAdmins(): Promise<AdminUser[]> {
   return admins;
 }
@@ -109,6 +151,10 @@ export async function addAdmin(username: string): Promise<AdminUser> {
   const admin: AdminUser = { id: crypto.randomUUID(), username, isPrimary: false, addedAt: new Date().toISOString() };
   admins = [...admins, admin];
   saveAdmins(admins);
+  if (!authors.find((a) => a.githubUsername.toLowerCase() === username.toLowerCase())) {
+    authors = [...authors, { githubUsername: username, fullName: '', penName: username }];
+    saveAuthors(authors);
+  }
   return admin;
 }
 
@@ -118,6 +164,8 @@ export async function removeAdmin(id: string): Promise<void> {
   if (target.isPrimary) throw new Error('Cannot remove the primary admin');
   admins = admins.filter((a) => a.id !== id);
   saveAdmins(admins);
+  authors = authors.filter((a) => a.githubUsername.toLowerCase() !== target.username.toLowerCase());
+  saveAuthors(authors);
 }
 
 export async function transferPrimary(toId: string): Promise<void> {
@@ -125,6 +173,15 @@ export async function transferPrimary(toId: string): Promise<void> {
   if (!target) throw new Error('Admin not found');
   admins = admins.map((a) => ({ ...a, isPrimary: a.id === toId }));
   saveAdmins(admins);
+}
+
+// ── Migration ────────────────────────────────────────────────────────────────
+
+export async function migrateStoryAuthors(defaultUsername: string): Promise<Story[]> {
+  if (!stories.some((s) => !s.authorUsername)) return stories;
+  stories = stories.map((s) => (s.authorUsername ? s : { ...s, authorUsername: defaultUsername }));
+  saveStories(stories);
+  return stories;
 }
 
 // ── Read ────────────────────────────────────────────────────────────────────

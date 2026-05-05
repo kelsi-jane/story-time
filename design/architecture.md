@@ -53,23 +53,39 @@ story-time/
 
 ## Auth Flow
 
-Azure Static Web Apps has native GitHub OAuth support. The admin route is protected via SWA's built-in role system — no custom auth code required.
+SWA route protection (`allowedRoles`) has been removed from `staticwebapp.config.json`. Auth is owned entirely by React via `AuthContext` and `AdminLayout`.
 
-1. Admin navigates to `/admin`
-2. SWA redirects to GitHub OAuth if not authenticated
-3. On success, SWA issues a session cookie scoped to the app
-4. Azure Functions receive the authenticated principal via request headers
+1. Unauthenticated user navigates to any `/admin/*` route
+2. `AdminLayout` detects `user === null` → redirects to `/.auth/login/github?post_login_redirect_uri=<current path>`
+3. GitHub OAuth completes → SWA redirects back to the original URL
+4. `AuthContext` fetches `/.auth/me`, reads `clientPrincipal.userDetails` (GitHub username)
+5. Username checked against admin whitelist (`isAdminUser`)
+6. Not whitelisted → `/unauthorized`; whitelisted → admin renders with role (`isAdmin`, `isPrimary`)
+
+**Why SWA protection was removed:** The built-in 401 override only accepts a static redirect URL, so post-login the user always landed on `/` instead of the page they came from. React ownership allows passing `window.location.pathname` as the return URL.
+
+**Local dev:** `getAuthUser()` returns the value of `VITE_DEV_AUTH_USERNAME` from `.env.local` instead of fetching `/.auth/me`. No real session exists locally.
+
+## Admin Whitelist
+
+GitHub username-based. Seeded from the `VITE_INITIAL_ADMIN_USERNAMES` environment variable (comma-separated; first entry is primary). Stored in `localStorage` in the mock API — will move to Azure Table Storage when the real API is wired.
+
+**Roles:**
+- `primary` — full access including `/admin/admins` (add/remove admins, transfer primary)
+- `admin` — story editing only; cannot access admin management
 
 ## Admin UI
 
-Protected by GitHub OAuth via SWA's built-in role system. Desktop-first; functional over polished.
+Desktop-first; functional over polished.
 
 | Route | Purpose |
 |---|---|
 | `/admin` | Story list — publish/unpublish, delete |
+| `/admin/admins` | Manage admin whitelist (primary only) |
 | `/admin/stories/new` | Create story + metadata (title, slug, tags, series) |
 | `/admin/stories/:slug` | Edit story metadata, manage + reorder chapters |
 | `/admin/stories/:slug/chapters/new` | Upload or write chapter Markdown |
+| `/admin/stories/:slug/chapters/:id/edit` | Edit existing chapter title and content |
 
 The admin UI is the only place where write operations are exposed. Reader-facing surfaces are read-only against the same API.
 

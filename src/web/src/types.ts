@@ -5,6 +5,14 @@ export interface AdminUser {
   addedAt: string;
 }
 
+export interface Author {
+  githubUsername: string;
+  fullName: string;
+  penName: string;
+  bio?: string;
+  profileImageUrl?: string;
+}
+
 export interface Chapter {
   id: string;
   storyId: string;
@@ -24,4 +32,5 @@ export interface Story {
   seriesOrder?: number;
   publishedAt: string | null;
   chapters: Chapter[];
+  authorUsername?: string;
 }

@@ -307,6 +307,14 @@ textarea.input {
   color: var(--color-border);
 }
 
+/* ── Reader story byline ────────────────────────────────────────────────── */
+
+.story-author {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
 /* ── Markdown editor ────────────────────────────────────────────────────── */
 
 .mde {

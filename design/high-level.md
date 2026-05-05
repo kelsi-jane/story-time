@@ -61,3 +61,5 @@ Chapter
 - [Architecture](architecture.md)
 - [Backlog](backlog.md)
 - [Aesthetic](aesthethic.md)
+- [Security Concerns](security-concerns.md)
+- [Deployment](deployment.md)

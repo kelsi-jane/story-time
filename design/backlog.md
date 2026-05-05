@@ -44,3 +44,73 @@ Currently horizontal swipe navigates between chapters. In-chapter pagination wou
 
 ### Note on current scroll + swipe
 Current setup (vertical scroll to read, horizontal swipe to change chapter) has no conflict — `touch-action: pan-y` and `preventScrollOnSwipe` keep the gestures isolated. The conflict only arises if pagination is added.
+
+---
+
+## Series Badge on Discovery Cards
+
+**As a reader, I want to see at a glance that a story belongs to a series and what position it holds, so I know where to start.**
+
+### Scope
+- [ ] Badge on Discovery card: "Book N of [Series Name]"
+- [ ] Derive from `seriesSlug` + `seriesOrder` — data already exists, no model changes needed
+
+---
+
+## Publication Audit Log
+
+**As a platform operator, I want every publish and unpublish action to be permanently recorded, so that publication history is never lost and author attribution is protected.**
+
+### Why this matters
+
+The current `publishedAt: string | null` flag is mutable and creates two problems:
+
+1. **Author-lock bypass.** Author is locked once `publishedAt !== null`, but an admin can unpublish, change the author, and republish — circumventing the lock entirely.
+2. **No accountability.** There is no record of who published or unpublished a story, when, or why. This matters for moderation, disputes, and open-source deployments with larger author bases.
+
+### Design decisions
+
+**Publication state is an append-only event log, not a flag.** The current `publishedAt` field on `Story` is replaced by `publicationHistory: PublicationEvent[]`. `publishedAt` and `firstPublishedAt` become values derived from that history at read time.
+
+```
+PublicationEvent {
+  action:        'publish' | 'unpublish'
+  actorUsername: string      // who triggered it — may differ from the story's author
+  timestamp:     string
+  reason?:       string      // required for unpublish; optional for publish
+}
+```
+
+**Author lock rule changes.** Author is locked once `firstPublishedAt !== null` — i.e., once the story has ever been published — regardless of current publication state. Unpublish/republish cycles cannot change it.
+
+**Unpublish = temporary, Publish = weighty.** "Unpublish" is an author-initiated "under construction" action: the story is being revised before its next publication. It is not a deletion. Future UI should reflect this asymmetry — publishing is a normal action; unpublishing requires a confirmation gate and a required reason field.
+
+**Archive is a separate, heavier concept.** Archiving a story (permanent removal from reader-facing surfaces) has implications for associated reader data: likes, bookmarks, read history, comments, follows. Archive is out of scope until those reader features exist and the full impact is understood.
+
+### Scope (when built)
+
+- [ ] Replace `publishedAt: string | null` on `Story` with `publicationHistory: PublicationEvent[]`
+- [ ] Derive `publishedAt` (most recent `'publish'` event timestamp, or null) and `firstPublishedAt` (first `'publish'` event timestamp, or null) — expose as computed fields or derive at call sites
+- [ ] Update author-lock rule in `StoryEdit` to use `firstPublishedAt` instead of `publishedAt`
+- [ ] Update all publish/unpublish API calls to append an event rather than overwrite a field
+- [ ] Update admin UI publish/unpublish buttons to pass `actorUsername`
+- [ ] Unpublish gate: confirmation modal + required reason field (populated as `reason` on the event)
+- [ ] Admin story list: surface publication state derived from history (no visible change for readers)
+
+### Future / out of scope now
+
+- Moderator role: a non-author admin unpublishing someone else's story. The `actorUsername` field on `PublicationEvent` already supports this — the permission model is what's deferred.
+- Archive action and its implications for associated reader data.
+- Notification to author when a moderator (not the author) takes down their story.
+
+---
+
+## Image Upload (Admin)
+
+**As an admin, I want to upload cover and chapter images that are constrained to brand guidelines before being stored.**
+
+### Scope
+- [ ] Image upload UI in admin (story edit page)
+- [ ] Client-side aspect ratio and max dimension enforcement before write
+- [ ] Write to Azure Blob Storage (`images/{storySlug}/{imageId}.{ext}`)
+- [ ] Display uploaded images on StoryTitle and Chapter pages

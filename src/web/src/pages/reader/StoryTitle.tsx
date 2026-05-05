@@ -1,20 +1,25 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { getStory } from '../../api';
-import type { Story } from '../../types';
+import { getStory, getAuthor } from '../../api';
+import type { Story, Author } from '../../types';
 
 export default function StoryTitle() {
   const { slug } = useParams<{ slug: string }>();
   const [story, setStory] = useState<Story | null>(null);
+  const [author, setAuthor] = useState<Author | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!slug) return;
     getStory(slug)
-      .then((s) => {
-        if (!s) setError('This story couldn\'t be found.');
-        else setStory(s);
+      .then(async (s) => {
+        if (!s) { setError('This story couldn\'t be found.'); return; }
+        setStory(s);
+        if (s.authorUsername) {
+          const a = await getAuthor(s.authorUsername);
+          setAuthor(a);
+        }
       })
       .catch(() => setError('This story couldn\'t be loaded. Try reloading the page.'))
       .finally(() => setLoading(false));
@@ -44,6 +49,7 @@ export default function StoryTitle() {
       <div style={styles.meta}>
         <h1 style={styles.title}>{story.title}</h1>
         {story.subtitle && <p style={styles.subtitle}>{story.subtitle}</p>}
+        {author && <p className="story-author" style={{ fontSize: 18 }}>by {author.penName}</p>}
 
         {story.description && (
           <p style={styles.description}>{story.description}</p>
@@ -120,6 +126,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: 'Inter, sans-serif',
     fontWeight: 400,
     fontSize: 18,
+    fontStyle: 'italic',
     color: 'var(--color-text-secondary)',
     letterSpacing: '-0.2px',
     marginTop: -8,
