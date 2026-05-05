@@ -1,16 +1,20 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getStories } from '../../api';
-import type { Story } from '../../types';
+import { getStories, getAuthors } from '../../api';
+import type { Story, Author } from '../../types';
 
 export default function Discovery() {
   const [stories, setStories] = useState<Story[]>([]);
+  const [authorMap, setAuthorMap] = useState<Map<string, Author>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    getStories()
-      .then(setStories)
+    Promise.all([getStories(), getAuthors()])
+      .then(([s, a]) => {
+        setStories(s.filter((story) => story.publishedAt !== null));
+        setAuthorMap(new Map(a.map((auth) => [auth.githubUsername, auth])));
+      })
       .catch(() => setError('This library couldn\'t be loaded. Try reloading the page.'))
       .finally(() => setLoading(false));
   }, []);
@@ -47,6 +51,9 @@ export default function Discovery() {
                     {story.title}
                     {story.subtitle && <span style={styles.cardSubtitle}>: {story.subtitle}</span>}
                   </h2>
+                  {story.authorUsername && authorMap.has(story.authorUsername) && (
+                    <p className="story-author">by {authorMap.get(story.authorUsername)!.penName}</p>
+                  )}
                   {story.description && (
                     <p style={styles.cardDescription}>{story.description}</p>
                   )}
@@ -129,6 +136,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   cardSubtitle: {
     fontWeight: 400,
+    fontStyle: 'italic',
     color: 'var(--color-text-secondary)',
   },
   cardDescription: {

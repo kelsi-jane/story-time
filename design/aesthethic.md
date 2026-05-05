@@ -106,6 +106,12 @@ The reader's primary devices are anticipated to be mobile (take the story with y
 
 For the admin-facing management surfaces, desktop-first is fine — but verify they don't break on mobile. Stack rather than overlap.
 
+## CSS implementation
+
+New components and pages must use existing CSS classes from `src/web/src/index.css` rather than defining a `const styles: Record<string, React.CSSProperties>` object. Classes available include `.btn`, `.btn-primary`, `.btn-secondary`, `.btn-danger`, `.field`, `.input`, `.page-card`, `.admin-table`, `.admin-page-heading`, `.admin-subheading`, `.admin-divider`, `.badge`, `.badge-accent`, `.badge-success`, `.prose`, and the markdown editor classes.
+
+Use inline styles only for truly one-off values (a specific `maxWidth`, `gap`, or `marginBottom`). If the same inline style appears in two or more components, extract it to a CSS class in `index.css` instead.
+
 ## When in doubt, do less
 
 If you're choosing between two visual options, choose the simpler one. If you're choosing between adding a feature and not adding it, lean toward not. If a component has more than five visible elements, ask whether two of them can be removed. If an animation would help, ask whether the same effect happens without animation.

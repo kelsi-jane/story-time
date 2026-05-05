@@ -165,15 +165,31 @@ The workflow in `.github/workflows/azure-static-web-apps.yml` builds and deploys
 
 ---
 
+## Deployed Resources (current instance)
+
+| Resource | Value |
+|---|---|
+| Azure Static Web App name | `lively-ocean-0d34a8310` |
+| Hostname | `https://lively-ocean-0d34a8310.7.azurestaticapps.net` |
+| GitHub repository | `kelsi-jane/story-time` |
+| Workflow file | `.github/workflows/azure-static-web-apps-lively-ocean-0d34a8310.yml` |
+| Deploy token secret name | `AZURE_STATIC_WEB_APPS_API_TOKEN_LIVELY_OCEAN_0D34A8310` |
+
+---
+
 ## Environment Variables Reference
 
-| Variable | Where set | Purpose |
-|---|---|---|
-| `GITHUB_CLIENT_ID` | SWA app settings | GitHub OAuth app client ID |
-| `GITHUB_CLIENT_SECRET` | SWA app settings | GitHub OAuth app client secret |
-| `AZURE_STORAGE_CONNECTION_STRING` | SWA app settings | Blob + Table Storage access |
-| `AzureWebJobsStorage` | `local.settings.json` | Functions local storage binding |
-| `AZURE_STATIC_WEB_APPS_API_TOKEN` | GitHub repository secret | SWA deployment token (set automatically) |
+`VITE_*` variables are build-time — Vite bakes them into the JS bundle during the GitHub Actions build. They are publicly readable in the bundle and must never contain secrets. See `design/security-concerns.md` for the full classification.
+
+| Variable | Type | Where set | Purpose |
+|---|---|---|---|
+| `VITE_DEV_AUTH_USERNAME` | Build-time | `.env.local` only | Mocks authenticated GitHub user in local dev |
+| `VITE_INITIAL_ADMIN_USERNAMES` | Build-time | SWA app settings + `.env.local` | Comma-separated GitHub usernames seeded as admins; first is primary |
+| `GITHUB_CLIENT_ID` | Build-time | SWA app settings | GitHub OAuth app client ID |
+| `GITHUB_CLIENT_SECRET` | Runtime, **secret** | GitHub Secrets → workflow `env:` | GitHub OAuth app client secret |
+| `AZURE_STORAGE_CONNECTION_STRING` | Runtime, **secret** | GitHub Secrets → workflow `env:` | Blob + Table Storage access |
+| `AzureWebJobsStorage` | Local only | `local.settings.json` | Functions local storage binding |
+| `AZURE_STATIC_WEB_APPS_API_TOKEN_*` | CI/CD | GitHub repository secret | SWA deployment token |
 
 ---
 
@@ -182,3 +198,4 @@ The workflow in `.github/workflows/azure-static-web-apps.yml` builds and deploys
 - `local.settings.json` is git-ignored — never commit it
 - `.azurite/` is git-ignored — local storage emulator data
 - The SWA free tier supports one deployment environment; pull request preview environments require Standard tier
+- `VITE_INITIAL_ADMIN_USERNAMES` must be set in Azure SWA app settings before deploying — without it the admin whitelist is empty and no one can log in

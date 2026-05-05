@@ -5,8 +5,9 @@ import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } 
 import { CSS } from '@dnd-kit/utilities';
 import AdminLayout from '../../components/AdminLayout';
 import TagInput from '../../components/TagInput';
-import { getStory, updateStory, deleteStory, deleteChapter, reorderChapters } from '../../api';
-import type { Story, Chapter } from '../../types';
+import { getStory, updateStory, deleteStory, deleteChapter, reorderChapters, getAuthors } from '../../api';
+import { useAuth } from '../../context/AuthContext';
+import type { Story, Chapter, Author } from '../../types';
 
 function SortableChapterRow({ chapter, storySlug, onDeleted }: {
   chapter: Chapter;
@@ -25,43 +26,48 @@ function SortableChapterRow({ chapter, storySlug, onDeleted }: {
     <div
       ref={setNodeRef}
       style={{
-        ...rowStyles.row,
+        display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px',
+        background: 'var(--color-surface)', border: '1px solid var(--color-border)',
+        borderRadius: 4, marginBottom: 4,
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.4 : 1,
       }}
     >
-      <span {...attributes} {...listeners} style={rowStyles.handle} title="Drag to reorder">⠿</span>
-      <span style={rowStyles.order}>{chapter.order}</span>
-      <span style={rowStyles.title}>{chapter.title}</span>
-      <Link to={`/admin/stories/${storySlug}/chapters/${chapter.id}/edit`} className="btn btn-secondary" style={rowStyles.editBtn}>Edit</Link>
-      <button className="btn btn-danger" style={rowStyles.deleteBtn} onClick={handleDelete}>Delete</button>
+      <span {...attributes} {...listeners} style={{ cursor: 'grab', color: 'var(--color-border)', fontSize: 18, lineHeight: 1, userSelect: 'none' }} title="Drag to reorder">⠿</span>
+      <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: 'var(--color-text-secondary)', minWidth: 16, textAlign: 'right' }}>{chapter.order}</span>
+      <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: 'var(--color-text-primary)', flex: 1 }}>{chapter.title}</span>
+      <Link to={`/admin/stories/${storySlug}/chapters/${chapter.id}/edit`} className="btn btn-secondary" style={{ fontSize: 12, padding: '4px 10px' }}>Edit</Link>
+      <button className="btn btn-danger" style={{ fontSize: 12, padding: '4px 10px' }} onClick={handleDelete}>Delete</button>
     </div>
   );
 }
 
-const rowStyles: Record<string, React.CSSProperties> = {
-  row: { display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 4, marginBottom: 4 },
-  handle: { cursor: 'grab', color: 'var(--color-border)', fontSize: 18, lineHeight: 1, userSelect: 'none' },
-  order: { fontFamily: 'Inter, sans-serif', fontSize: 12, color: 'var(--color-text-secondary)', minWidth: 16, textAlign: 'right' },
-  title: { fontFamily: 'Inter, sans-serif', fontSize: 14, color: 'var(--color-text-primary)', flex: 1 },
-  editBtn: { fontSize: 12, padding: '4px 10px' },
-  deleteBtn: { fontSize: 12, padding: '4px 10px' },
-};
-
 export default function StoryEdit() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [story, setStory] = useState<Story | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
+  const [authors, setAuthors] = useState<Author[]>([]);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ title: '', subtitle: '', description: '', tags: [] as string[], seriesSlug: '', seriesOrder: '' });
+  const [consentChecked, setConsentChecked] = useState(false);
+  const [form, setForm] = useState({
+    title: '',
+    subtitle: '',
+    description: '',
+    tags: [] as string[],
+    seriesSlug: '',
+    seriesOrder: '',
+    authorUsername: '',
+  });
 
   useEffect(() => {
     if (!slug) return;
-    getStory(slug).then((s) => {
+    Promise.all([getStory(slug), getAuthors()]).then(([s, a]) => {
       if (!s) return;
       setStory(s);
+      setAuthors(a);
       setChapters(s.chapters.slice().sort((a, b) => a.order - b.order));
       setForm({
         title: s.title,
@@ -70,17 +76,20 @@ export default function StoryEdit() {
         tags: s.tags,
         seriesSlug: s.seriesSlug ?? '',
         seriesOrder: s.seriesOrder?.toString() ?? '',
+        authorUsername: s.authorUsername ?? user?.username ?? '',
       });
     });
   }, [slug]);
 
   function set(field: string, value: string | string[]) {
+    if (field === 'authorUsername') setConsentChecked(false);
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    if (!slug) return;
+    if (!slug || !story) return;
+    if (form.authorUsername !== user?.username && !consentChecked) return;
     setSaving(true);
     try {
       const updated = await updateStory(slug, {
@@ -90,6 +99,7 @@ export default function StoryEdit() {
         tags: form.tags,
         seriesSlug: form.seriesSlug.trim() || undefined,
         seriesOrder: form.seriesOrder ? parseInt(form.seriesOrder) : undefined,
+        ...(story.publishedAt === null ? { authorUsername: form.authorUsername } : {}),
       });
       setStory(updated);
     } finally {
@@ -115,25 +125,29 @@ export default function StoryEdit() {
 
   if (!story) return null;
 
+  const isPublished = story.publishedAt !== null;
+  const selectedAuthor = authors.find((a) => a.githubUsername === form.authorUsername);
+  const needsConsent = !!form.authorUsername && form.authorUsername !== user?.username;
+
   return (
     <AdminLayout breadcrumb={story.title}>
-      <form onSubmit={handleSave} style={styles.form}>
-        <div style={styles.titleRow}>
-          <h1 style={styles.heading}>{story.title}</h1>
-          <div style={styles.titleActions}>
+      <form onSubmit={handleSave}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 32 }}>
+          <h1 className="admin-page-heading">{story.title}</h1>
+          <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
             <button type="button" className="btn btn-danger" onClick={handleDelete}>Delete story</button>
-            <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Save changes'}</button>
+            <button type="submit" className="btn btn-primary" disabled={saving || (needsConsent && !consentChecked)}>{saving ? 'Saving…' : 'Save changes'}</button>
           </div>
         </div>
 
-        <div style={styles.fields}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 600 }}>
           <div className="field">
             <label htmlFor="title">Title</label>
             <input id="title" className="input" value={form.title} onChange={(e) => set('title', e.target.value)} required />
           </div>
 
           <div className="field">
-            <label htmlFor="subtitle">Subtitle <span style={styles.optional}>(optional)</span></label>
+            <label htmlFor="subtitle">Subtitle <span style={{ fontWeight: 400, color: 'var(--color-text-secondary)' }}>(optional)</span></label>
             <input id="subtitle" className="input" value={form.subtitle} onChange={(e) => set('subtitle', e.target.value)} placeholder="e.g. Wedding Bells" />
           </div>
 
@@ -147,28 +161,69 @@ export default function StoryEdit() {
             <TagInput value={form.tags} onChange={(tags) => set('tags', tags)} />
           </div>
 
-          <div style={styles.row}>
+          <div className="field">
+            <label htmlFor="author">Author</label>
+            {isPublished ? (
+              <p style={{ fontSize: 14, color: 'var(--color-text-secondary)', padding: '8px 0', fontStyle: 'italic' }}>
+                {selectedAuthor?.penName || form.authorUsername}
+                <span style={{ fontSize: 12, marginLeft: 8 }}>(locked after publish)</span>
+              </p>
+            ) : authors.length <= 1 ? (
+              <p style={{ fontSize: 14, color: 'var(--color-text-primary)', padding: '8px 0' }}>
+                {selectedAuthor ? (selectedAuthor.penName || selectedAuthor.githubUsername) : (user?.username ?? '—')}
+              </p>
+            ) : (
+              <select
+                id="author"
+                className="input"
+                value={form.authorUsername}
+                onChange={(e) => set('authorUsername', e.target.value)}
+              >
+                {authors.map((a) => (
+                  <option key={a.githubUsername} value={a.githubUsername}>
+                    {a.penName || a.githubUsername}{a.githubUsername === user?.username ? ' (you)' : ''}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          {!isPublished && needsConsent && (
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: 'var(--color-text-primary)', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={consentChecked}
+                onChange={(e) => setConsentChecked(e.target.checked)}
+                style={{ marginTop: 2, flexShrink: 0 }}
+              />
+              I have permission to publish on behalf of {selectedAuthor?.penName || form.authorUsername}.
+            </label>
+          )}
+
+          <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
             <div className="field" style={{ flex: 1 }}>
-              <label htmlFor="seriesSlug">Series slug <span style={styles.optional}>(optional)</span></label>
+              <label htmlFor="seriesSlug">Series slug <span style={{ fontWeight: 400, color: 'var(--color-text-secondary)' }}>(optional)</span></label>
               <input id="seriesSlug" className="input" value={form.seriesSlug} onChange={(e) => set('seriesSlug', e.target.value)} />
             </div>
             <div className="field" style={{ width: 100 }}>
-              <label htmlFor="seriesOrder">Order <span style={styles.optional}>(optional)</span></label>
+              <label htmlFor="seriesOrder">Order <span style={{ fontWeight: 400, color: 'var(--color-text-secondary)' }}>(optional)</span></label>
               <input id="seriesOrder" className="input" type="number" min={1} value={form.seriesOrder} onChange={(e) => set('seriesOrder', e.target.value)} />
             </div>
           </div>
         </div>
       </form>
 
-      <div style={styles.divider} />
+      <hr className="admin-divider" />
 
-      <div style={styles.chaptersHeader}>
-        <h2 style={styles.subheading}>Chapters</h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <h2 className="admin-subheading">Chapters</h2>
         <Link to={`/admin/stories/${slug}/chapters/new`} className="btn btn-secondary">+ Add chapter</Link>
       </div>
 
       {chapters.length === 0 ? (
-        <p style={styles.muted}>No chapters yet. <Link to={`/admin/stories/${slug}/chapters/new`}>Add one.</Link></p>
+        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: 'var(--color-text-secondary)' }}>
+          No chapters yet. <Link to={`/admin/stories/${slug}/chapters/new`}>Add one.</Link>
+        </p>
       ) : (
         <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={chapters.map((c) => c.id)} strategy={verticalListSortingStrategy}>
@@ -186,17 +241,3 @@ export default function StoryEdit() {
     </AdminLayout>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  form: {},
-  titleRow: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 32 },
-  heading: { fontFamily: 'Inter, sans-serif', fontWeight: 500, fontSize: 22, color: 'var(--color-text-primary)' },
-  titleActions: { display: 'flex', gap: 10, flexShrink: 0 },
-  fields: { display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 600 },
-  row: { display: 'flex', gap: 16, alignItems: 'flex-start' },
-  optional: { fontWeight: 400, color: 'var(--color-text-secondary)' },
-  divider: { height: 1, background: 'var(--color-border)', margin: '40px 0' },
-  chaptersHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
-  subheading: { fontFamily: 'Inter, sans-serif', fontWeight: 500, fontSize: 16, color: 'var(--color-text-primary)' },
-  muted: { fontFamily: 'Inter, sans-serif', fontSize: 14, color: 'var(--color-text-secondary)' },
-};
