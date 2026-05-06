@@ -1,12 +1,5 @@
 {
-  "routes": [
-    {
-      "route": "/stories/*/chapters/*",
-      "headers": {
-        "X-Robots-Tag": "noindex, nofollow"
-      }
-    }
-  ],
+  "routes": [],
   "auth": {
     "identityProviders": {
       "github": {
