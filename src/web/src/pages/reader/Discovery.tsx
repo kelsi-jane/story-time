@@ -2,12 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getStories, getAuthors, getAuthor } from '../../api';
 import { getAuthUser } from '../../api/auth';
+import { getPreferences, PANEL_SECTION_REGISTRY } from '../../api/preferences';
 import type { Story, Author } from '../../types';
 import ReaderPanel, { type ReaderPanelSection } from '../../components/ReaderPanel';
 
 // TODO: replace with real data from reading history, bookmarks, and favorites APIs
 const PLACEHOLDER_SECTIONS: ReaderPanelSection[] = [
   {
+    id: 'pick-up',
     heading: 'Pick up where you left off',
     items: [
       { label: 'Chapter 3 · The Silver Thread', href: '/stories/the-silver-thread/chapters/ch1' },
@@ -16,6 +18,7 @@ const PLACEHOLDER_SECTIONS: ReaderPanelSection[] = [
     hasMore: false,
   },
   {
+    id: 'favorites',
     heading: 'Favorites',
     items: [
       { label: 'The Silver Thread', href: '/stories/the-silver-thread' },
@@ -24,6 +27,7 @@ const PLACEHOLDER_SECTIONS: ReaderPanelSection[] = [
     hasMore: false,
   },
   {
+    id: 'reading-list',
     heading: 'Reading List',
     items: [
       { label: 'The Silver Thread: Wedding Bells', href: '/stories/the-silver-thread-wedding-bells' },
@@ -32,6 +36,7 @@ const PLACEHOLDER_SECTIONS: ReaderPanelSection[] = [
     hasMore: false,
   },
   {
+    id: 'new-this-week',
     heading: 'New This Week',
     items: [
       { label: 'The Silver Thread: Wedding Bells', href: '/stories/the-silver-thread-wedding-bells' },
@@ -55,6 +60,17 @@ const SearchIcon = () => (
   </svg>
 );
 
+const SlidersIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+    <line x1="2" y1="4" x2="14" y2="4" />
+    <circle cx="10" cy="4" r="1.75" fill="var(--color-surface)" />
+    <line x1="2" y1="8" x2="14" y2="8" />
+    <circle cx="5" cy="8" r="1.75" fill="var(--color-surface)" />
+    <line x1="2" y1="12" x2="14" y2="12" />
+    <circle cx="11" cy="12" r="1.75" fill="var(--color-surface)" />
+  </svg>
+);
+
 export default function Discovery() {
   const [stories, setStories] = useState<Story[]>([]);
   const [authorMap, setAuthorMap] = useState<Map<string, Author>>(new Map());
@@ -65,6 +81,9 @@ export default function Discovery() {
   const [welcomeName, setWelcomeName] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
+
+  const [panelAtEnd, setPanelAtEnd] = useState(false);
+  const prefs = getPreferences();
 
   useEffect(() => {
     getAuthUser().then(async (user) => {
@@ -128,6 +147,7 @@ export default function Discovery() {
               />
               {menuOpen && (
                 <div className="profile-menu">
+                  <Link to="/settings" className="profile-menu-item">Settings</Link>
                   <a
                     href={import.meta.env.DEV ? '/' : '/.auth/logout?post_logout_redirect_uri=/'}
                     className="profile-menu-item"
@@ -148,14 +168,34 @@ export default function Discovery() {
         </div>
       </div>
 
-      {/* Tagline + reader panel — 960px container */}
-      <div style={styles.page}>
-        <div className="reader-panel-wrapper">
-          <ReaderPanel sections={PLACEHOLDER_SECTIONS} />
+      {/* Quick links banner — 960px */}
+      <div className="discovery-section-wrapper">
+        <div className="discovery-banner discovery-section-banner">
+          <div className="discovery-section-inner">
+            <span className="discovery-banner-title">Quick Links</span>
+            <Link to="/settings" className="discovery-banner-btn" aria-label="Customize reader panel">
+              <SlidersIcon />
+            </Link>
+          </div>
         </div>
       </div>
 
-      {/* Section banner — constrained to content width */}
+      {/* Reader panel — 960px container */}
+      <div style={styles.page}>
+        <div className={`reader-panel-wrapper${panelAtEnd ? ' at-end' : ''}`}>
+          <ReaderPanel
+            sections={PLACEHOLDER_SECTIONS.filter((s) => {
+              const config = PANEL_SECTION_REGISTRY.find((r) => r.id === s.id);
+              if (!config) return false;
+              if (config.requiresAuth && !authUsername) return false;
+              return prefs.pinnedPanels.includes(s.id);
+            })}
+            onScrollEdge={setPanelAtEnd}
+          />
+        </div>
+      </div>
+
+      {/* Discover More section banner — 960px */}
       <div className="discovery-section-wrapper">
         <div className="discovery-banner discovery-section-banner">
           <div className="discovery-section-inner">
@@ -209,12 +249,12 @@ const styles: Record<string, React.CSSProperties> = {
   page: {
     maxWidth: 960,
     margin: '0 auto',
-    padding: '32px 24px 0',
+    padding: '16px 24px 0',
   },
   storiesContainer: {
     maxWidth: 960,
     margin: '0 auto',
-    padding: '40px 24px 48px',
+    padding: '16px 24px 48px',
   },
   siteTagline: {
     fontFamily: 'Inter, sans-serif',
