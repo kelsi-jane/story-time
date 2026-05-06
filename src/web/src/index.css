@@ -25,6 +25,11 @@ a:hover {
 }
 
 /* Prose body — chapter reading surface */
+.prose {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
 .prose p {
   margin-bottom: 1.5em;
 }

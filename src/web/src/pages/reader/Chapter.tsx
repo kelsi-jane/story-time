@@ -15,6 +15,14 @@ export default function Chapter() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    const meta = document.createElement('meta');
+    meta.name = 'robots';
+    meta.content = 'noindex, nofollow';
+    document.head.appendChild(meta);
+    return () => { document.head.removeChild(meta); };
+  }, []);
+
   // Capture enter direction once on mount — drives the slide-in animation
   const [enterClass] = useState<string>(() => {
     const from = (location.state as { from?: string } | null)?.from;
@@ -95,7 +103,12 @@ export default function Chapter() {
             <div style={styles.rule} />
           </header>
 
-          <div className="prose" style={styles.prose}>
+          <div
+            className="prose"
+            style={styles.prose}
+            onCopy={(e) => e.preventDefault()}
+            onContextMenu={(e) => e.preventDefault()}
+          >
             <ReactMarkdown>{content}</ReactMarkdown>
           </div>
 
