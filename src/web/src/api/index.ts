@@ -1,4 +1,6 @@
-import type { Story, Chapter, AdminUser, Author } from '../types';
+import type { Story, Chapter, AdminUser, Author, ReadingEvent } from '../types';
+import { getOrCreateReaderId } from './reader-identity';
+import { getAuthUser } from './auth';
 
 const INITIAL_STORIES: Story[] = [
   {
@@ -288,4 +290,59 @@ export async function reorderChapters(storySlug: string, orderedIds: string[]): 
     return { ...s, chapters: reordered };
   });
   saveStories(stories);
+}
+
+// ── Reading history ──────────────────────────────────────────────────────────
+
+const READING_EVENTS_KEY = 'st-reading-events';
+
+function loadReadingEvents(): ReadingEvent[] {
+  try {
+    const raw = localStorage.getItem(READING_EVENTS_KEY);
+    if (raw) return JSON.parse(raw) as ReadingEvent[];
+  } catch {}
+  return [];
+}
+
+function saveReadingEvents(events: ReadingEvent[]): void {
+  try {
+    localStorage.setItem(READING_EVENTS_KEY, JSON.stringify(events));
+  } catch {}
+}
+
+export async function logReadingEvent(
+  chapter: Pick<Chapter, 'id' | 'storyId' | 'order'>,
+  storySlug: string,
+): Promise<void> {
+  const authUser = await getAuthUser();
+  const readerId = authUser?.userId ?? getOrCreateReaderId();
+  const event: ReadingEvent = {
+    id: crypto.randomUUID(),
+    readerId,
+    storyId: chapter.storyId,
+    chapterId: chapter.id,
+    storySlug,
+    chapterOrder: chapter.order,
+    occurredAt: new Date().toISOString(),
+  };
+  const events = loadReadingEvents();
+  events.push(event);
+  saveReadingEvents(events);
+}
+
+export async function getReadingEvents(filters?: {
+  readerId?: string;
+  storyId?: string;
+  chapterId?: string;
+  from?: string;
+  to?: string;
+}): Promise<ReadingEvent[]> {
+  let events = loadReadingEvents();
+  if (!filters) return events;
+  if (filters.readerId)  events = events.filter((e) => e.readerId === filters.readerId);
+  if (filters.storyId)   events = events.filter((e) => e.storyId === filters.storyId);
+  if (filters.chapterId) events = events.filter((e) => e.chapterId === filters.chapterId);
+  if (filters.from)      events = events.filter((e) => e.occurredAt >= filters.from!);
+  if (filters.to)        events = events.filter((e) => e.occurredAt <= filters.to!);
+  return events;
 }
