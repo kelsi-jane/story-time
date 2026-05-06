@@ -14,10 +14,11 @@ export interface PanelSectionConfig {
 }
 
 export const PANEL_SECTION_REGISTRY: PanelSectionConfig[] = [
-  { id: 'pick-up',       label: 'Pick up where you left off', requiresAuth: false, defaultPinned: true },
-  { id: 'favorites',     label: 'Favorites',                  requiresAuth: true,  defaultPinned: true },
-  { id: 'reading-list',  label: 'Reading List',               requiresAuth: true,  defaultPinned: true },
-  { id: 'new-this-week', label: 'New This Week',              requiresAuth: false, defaultPinned: true },
+  { id: 'pick-up',            label: 'Last Read',                  requiresAuth: false, defaultPinned: true },
+  { id: 'bookmarks',          label: 'Bookmarks',                  requiresAuth: true,  defaultPinned: true },
+  { id: 'favorite-stories',   label: 'Favorite Stories',           requiresAuth: true,  defaultPinned: true },
+  { id: 'reading-list',       label: 'Reading List',               requiresAuth: true,  defaultPinned: true },
+  { id: 'new-this-week',      label: 'New This Week',              requiresAuth: false, defaultPinned: true },
 ];
 
 const PREFS_KEY = 'st-preferences';

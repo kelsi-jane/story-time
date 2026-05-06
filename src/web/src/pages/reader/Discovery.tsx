@@ -10,16 +10,24 @@ import ReaderPanel, { type ReaderPanelSection } from '../../components/ReaderPan
 const PLACEHOLDER_SECTIONS: ReaderPanelSection[] = [
   {
     id: 'pick-up',
-    heading: 'Pick up where you left off',
+    heading: 'Last Read',
     items: [
-      { label: 'Chapter 3 · The Silver Thread', href: '/stories/the-silver-thread/chapters/ch1' },
-      { label: 'Bookmark · Ch. 1 · Wedding Bells', href: '/stories/the-silver-thread-wedding-bells/chapters/ch2-1' },
+      { label: 'Chapter 2 · The Silver Thread', href: '/stories/the-silver-thread/chapters/ch2' },
     ],
     hasMore: false,
   },
   {
-    id: 'favorites',
-    heading: 'Favorites',
+    id: 'bookmarks',
+    heading: 'Bookmarks',
+    items: [
+      { label: 'Chapter 1 · The Silver Thread', href: '/stories/the-silver-thread/chapters/ch1' },
+      { label: 'Chapter 2 · The Silver Thread: Wedding Bells', href: '/stories/the-silver-thread/chapters-wedding-bells/ch2' },
+    ],
+    hasMore: false,
+  },
+  {
+    id: 'favorite-stories',
+    heading: 'Favorite Stories',
     items: [
       { label: 'The Silver Thread', href: '/stories/the-silver-thread' },
       { label: 'The Silver Thread: Wedding Bells', href: '/stories/the-silver-thread-wedding-bells' },
