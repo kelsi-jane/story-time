@@ -51,6 +51,46 @@ Dark mode is a planned future feature. It will use an entirely separate palette 
 
 Components reference variables, not hex codes. `background: var(--color-surface)`, never `background: #ffffff`. This makes future adjustments (dark mode, brand customization) tractable.
 
+### Alternate palettes
+
+The default palette above is **Rose**. Three additional palettes are documented for future implementation as reader-selectable themes. All share the same token names — swapping a palette is a `:root` block replacement in `tokens.css`. Success, warning, and danger tokens are universal and unchanged.
+
+**Teal / Aquamarine** — spa-like, serene, literary. Leans slightly blue rather than green to avoid cheap seafood-restaurant teal. The closest sibling to Rose.
+
+```css
+--color-background:      #f3fafa;  /* Mist */
+--color-surface:         #ffffff;
+--color-surface-muted:   #e4f2f2;  /* Glacier */
+--color-border:          #b8dada;  /* Seafoam Frost */
+--color-text-primary:    #1a1a1a;
+--color-text-secondary:  #437878;  /* Muted Teal */
+--color-accent:          #0d7a7a;  /* Deep Aquamarine */
+```
+
+**Sage** — earthy, grounded, botanical. More grey-green than vivid — closer to dried herb than fresh grass. Feels like a poetry journal or natural history press.
+
+```css
+--color-background:      #f5f7f4;  /* Linen */
+--color-surface:         #ffffff;
+--color-surface-muted:   #e6ede4;  /* Pale Herb */
+--color-border:          #c4d3c0;  /* Sage Frost */
+--color-text-primary:    #1a1a1a;
+--color-text-secondary:  #5a7858;  /* Muted Herb */
+--color-accent:          #6b8c6d;  /* Dusty Sage */
+```
+
+**Warm Parchment** — aged paper, candlelight, book metaphor fully realized. The most thematically intentional palette for a literary platform. `text-primary` shifts slightly warm to feel like ink on paper rather than pixels on a screen.
+
+```css
+--color-background:      #fdf8f0;  /* Old Paper */
+--color-surface:         #fffcf7;  /* Warm White */
+--color-surface-muted:   #f5e8cf;  /* Aged Cream */
+--color-border:          #e6ceaa;  /* Buff */
+--color-text-primary:    #1c1506;  /* Ink */
+--color-text-secondary:  #8a6840;  /* Sepia */
+--color-accent:          #956040;  /* Tawny */
+```
+
 ### Typography
 
 One typeface: **Inter**, loaded via Google Fonts or self-hosted. Two weights: regular (400) and medium (500). No bold for normal text — medium is enough emphasis.
