@@ -6,6 +6,15 @@
   padding: 0;
 }
 
+[hidden] {
+  display: none !important;
+}
+
+.btn-placeholder {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 body {
   background-color: var(--color-background);
   color: var(--color-text-primary);
@@ -310,6 +319,241 @@ textarea.input {
 
 .tag-input-field::placeholder {
   color: var(--color-border);
+}
+
+/* ── Discovery banner ───────────────────────────────────────────────────── */
+
+.discovery-banner {
+  background: var(--color-surface-muted);
+}
+
+.discovery-banner-inner {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 12px 24px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+}
+
+.discovery-banner-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: #ffffff;
+  letter-spacing: -0.1px;
+}
+
+.site-banner-logo {
+  font-family: 'Inter', sans-serif;
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  letter-spacing: -0.3px;
+}
+
+.discovery-section-wrapper {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.discovery-section-inner {
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.discovery-section-banner {
+  background: var(--color-text-secondary);
+}
+
+.discovery-section-banner .discovery-banner-title {
+  color: #ffffff;
+}
+
+.discovery-section-banner .discovery-banner-btn {
+  color: #ffffff;
+}
+
+.site-banner-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-self: end;
+  position: relative;
+  cursor: pointer;
+}
+
+.profile-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  min-width: 140px;
+  overflow: hidden;
+  z-index: 100;
+}
+
+.profile-menu-item {
+  display: block;
+  width: 100%;
+  padding: 10px 16px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: var(--color-text-primary);
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.profile-menu-item:hover {
+  background: var(--color-surface-muted);
+  text-decoration: none;
+}
+
+.site-banner-welcome {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.site-banner-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--color-border);
+}
+
+.site-banner-signin {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  justify-self: end;
+}
+
+.site-banner-signin:hover {
+  color: var(--color-accent);
+}
+
+.discovery-banner-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  opacity: 0.9;
+}
+
+.discovery-banner-btn:hover {
+  opacity: 1;
+}
+
+.discovery-banner-btn-right {
+  justify-self: end;
+}
+
+
+/* ── Reader panel ───────────────────────────────────────────────────────── */
+
+.reader-panel-wrapper {
+  position: relative;
+  margin-bottom: 32px;
+}
+
+.reader-panel-wrapper::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 48px;
+  background: linear-gradient(to right, transparent, var(--color-background));
+  pointer-events: none;
+}
+
+.reader-panel {
+  display: flex;
+  flex-direction: row;
+  overflow-x: auto;
+  gap: 16px;
+  scrollbar-width: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.reader-panel::-webkit-scrollbar {
+  display: none;
+}
+
+.reader-panel-section {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 240px;
+  max-width: 280px;
+  flex-shrink: 0;
+}
+
+.reader-panel-heading {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.reader-panel-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.reader-panel-item {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reader-panel-item a {
+  color: var(--color-text-primary);
+  text-decoration: none;
+}
+
+.reader-panel-item a:hover {
+  color: var(--color-accent);
+}
+
+.reader-panel-more {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  text-align: right;
+  text-decoration: none;
+  margin-top: 4px;
+  display: block;
+}
+
+.reader-panel-more:hover {
+  color: var(--color-accent);
 }
 
 /* ── Reader story byline ────────────────────────────────────────────────── */

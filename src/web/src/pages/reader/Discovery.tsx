@@ -1,15 +1,80 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getStories, getAuthors } from '../../api';
+import { getStories, getAuthors, getAuthor } from '../../api';
+import { getAuthUser } from '../../api/auth';
 import type { Story, Author } from '../../types';
+import ReaderPanel, { type ReaderPanelSection } from '../../components/ReaderPanel';
+
+// TODO: replace with real data from reading history, bookmarks, and favorites APIs
+const PLACEHOLDER_SECTIONS: ReaderPanelSection[] = [
+  {
+    heading: 'Pick up where you left off',
+    items: [
+      { label: 'Chapter 3 · The Silver Thread', href: '/stories/the-silver-thread/chapters/ch1' },
+      { label: 'Bookmark · Ch. 1 · Wedding Bells', href: '/stories/the-silver-thread-wedding-bells/chapters/ch2-1' },
+    ],
+    hasMore: false,
+  },
+  {
+    heading: 'Favorites',
+    items: [
+      { label: 'The Silver Thread', href: '/stories/the-silver-thread' },
+      { label: 'The Silver Thread: Wedding Bells', href: '/stories/the-silver-thread-wedding-bells' },
+    ],
+    hasMore: false,
+  },
+  {
+    heading: 'Reading List',
+    items: [
+      { label: 'The Silver Thread: Wedding Bells', href: '/stories/the-silver-thread-wedding-bells' },
+      { label: 'The Silver Thread', href: '/stories/the-silver-thread' },
+    ],
+    hasMore: false,
+  },
+  {
+    heading: 'New This Week',
+    items: [
+      { label: 'The Silver Thread: Wedding Bells', href: '/stories/the-silver-thread-wedding-bells' },
+    ],
+    hasMore: false,
+  },
+];
+
+const Hamburger = () => (
+  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round">
+    <line x1="2" y1="4.5" x2="16" y2="4.5" />
+    <line x1="2" y1="9"   x2="16" y2="9"   />
+    <line x1="2" y1="13.5" x2="16" y2="13.5" />
+  </svg>
+);
+
+const SearchIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="7.5" cy="7.5" r="5" />
+    <line x1="11.5" y1="11.5" x2="16" y2="16" />
+  </svg>
+);
 
 export default function Discovery() {
   const [stories, setStories] = useState<Story[]>([]);
   const [authorMap, setAuthorMap] = useState<Map<string, Author>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [bannerTitle, setBannerTitle] = useState('Start Your Discovery Here');
+  const [authUsername, setAuthUsername] = useState<string | null>(null);
+  const [welcomeName, setWelcomeName] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    getAuthUser().then(async (user) => {
+      if (!user) return;
+      setAuthUsername(user.username);
+      const author = await getAuthor(user.username);
+      const firstName = author?.fullName.trim().split(/\s+/)[0] || user.username;
+      setWelcomeName(firstName);
+    });
+
     Promise.all([getStories(), getAuthors()])
       .then(([s, a]) => {
         setStories(s.filter((story) => story.publishedAt !== null));
@@ -17,6 +82,21 @@ export default function Discovery() {
       })
       .catch(() => setError('This library couldn\'t be loaded. Try reloading the page.'))
       .finally(() => setLoading(false));
+
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+
+    // TODO: replace with getReadingEvents() once reading history module is restored
+    try {
+      const raw = localStorage.getItem('st-reading-events');
+      if (raw && (JSON.parse(raw) as unknown[]).length > 0) setBannerTitle('Discover More');
+    } catch { /* leave default */ }
+
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
 
   if (loading) return (
@@ -32,46 +112,96 @@ export default function Discovery() {
   );
 
   return (
-    <div style={styles.page}>
-      <header style={styles.header}>
-        <h1 style={styles.siteTitle}>Wistful.Me</h1>
-        <p style={styles.siteTagline}>Stories worth staying up for.</p>
-      </header>
-
-      {stories.length === 0 ? (
-        <p style={styles.empty}>No stories yet — come back soon.</p>
-      ) : (
-        <ul style={styles.grid}>
-          {stories.map((story) => (
-            <li key={story.id} style={styles.card}>
-              <Link to={`/stories/${story.slug}`} style={styles.cardLink}>
-                <div style={styles.cardCover} aria-hidden="true" />
-                <div style={styles.cardBody}>
-                  <h2 style={styles.cardTitle}>
-                    {story.title}
-                    {story.subtitle && <span style={styles.cardSubtitle}>: {story.subtitle}</span>}
-                  </h2>
-                  {story.authorUsername && authorMap.has(story.authorUsername) && (
-                    <p className="story-author">by {authorMap.get(story.authorUsername)!.penName}</p>
-                  )}
-                  {story.description && (
-                    <p style={styles.cardDescription}>{story.description}</p>
-                  )}
-                  <div style={styles.tagRow}>
-                    {story.tags.map((tag) => (
-                      <span key={tag} style={styles.tag}>{tag}</span>
-                    ))}
-                  </div>
-                  <span style={styles.chapterCount}>
-                    {story.chapters.length} {story.chapters.length === 1 ? 'chapter' : 'chapters'}
-                  </span>
+    <>
+      {/* Site banner — full screen width */}
+      <div className="discovery-banner">
+        <div className="discovery-banner-inner">
+          <button className="discovery-banner-btn btn-placeholder" aria-label="Menu"><Hamburger /></button>
+          <span className="site-banner-logo">Wistful.Me</span>
+          {authUsername && welcomeName ? (
+            <div className="site-banner-user" ref={profileRef} onClick={() => setMenuOpen((o) => !o)}>
+              <span className="site-banner-welcome">Welcome, {welcomeName}</span>
+              <img
+                src={`https://github.com/${authUsername}.png?size=56`}
+                alt={authUsername}
+                className="site-banner-avatar"
+              />
+              {menuOpen && (
+                <div className="profile-menu">
+                  <a
+                    href={import.meta.env.DEV ? '/' : '/.auth/logout?post_logout_redirect_uri=/'}
+                    className="profile-menu-item"
+                  >
+                    Sign out
+                  </a>
                 </div>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+              )}
+            </div>
+          ) : (
+            <a
+              href={import.meta.env.DEV ? '#' : `/.auth/login/github?post_login_redirect_uri=${encodeURIComponent('/')}`}
+              className="site-banner-signin"
+            >
+              Sign in
+            </a>
+          )}
+        </div>
+      </div>
+
+      {/* Tagline + reader panel — 960px container */}
+      <div style={styles.page}>
+        <div className="reader-panel-wrapper">
+          <ReaderPanel sections={PLACEHOLDER_SECTIONS} />
+        </div>
+      </div>
+
+      {/* Section banner — constrained to content width */}
+      <div className="discovery-section-wrapper">
+        <div className="discovery-banner discovery-section-banner">
+          <div className="discovery-section-inner">
+            <span className="discovery-banner-title">{bannerTitle}</span>
+            <button className="discovery-banner-btn" aria-label="Search" hidden><SearchIcon /></button>
+          </div>
+        </div>
+      </div>
+
+      {/* Story grid — 960px container */}
+      <div style={styles.storiesContainer}>
+        {stories.length === 0 ? (
+          <p style={styles.empty}>No stories yet — come back soon.</p>
+        ) : (
+          <ul style={styles.grid}>
+            {stories.map((story) => (
+              <li key={story.id} style={styles.card}>
+                <Link to={`/stories/${story.slug}`} style={styles.cardLink}>
+                  <div style={styles.cardCover} aria-hidden="true" />
+                  <div style={styles.cardBody}>
+                    <h2 style={styles.cardTitle}>
+                      {story.title}
+                      {story.subtitle && <span style={styles.cardSubtitle}>: {story.subtitle}</span>}
+                    </h2>
+                    {story.authorUsername && authorMap.has(story.authorUsername) && (
+                      <p className="story-author">by {authorMap.get(story.authorUsername)!.penName}</p>
+                    )}
+                    {story.description && (
+                      <p style={styles.cardDescription}>{story.description}</p>
+                    )}
+                    <div style={styles.tagRow}>
+                      {story.tags.map((tag) => (
+                        <span key={tag} style={styles.tag}>{tag}</span>
+                      ))}
+                    </div>
+                    <span style={styles.chapterCount}>
+                      {story.chapters.length} {story.chapters.length === 1 ? 'chapter' : 'chapters'}
+                    </span>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </>
   );
 }
 
@@ -79,24 +209,19 @@ const styles: Record<string, React.CSSProperties> = {
   page: {
     maxWidth: 960,
     margin: '0 auto',
-    padding: '48px 24px',
+    padding: '32px 24px 0',
   },
-  header: {
-    textAlign: 'center',
-    marginBottom: 48,
-  },
-  siteTitle: {
-    fontFamily: 'Inter, sans-serif',
-    fontWeight: 500,
-    fontSize: 32,
-    color: 'var(--color-text-primary)',
-    letterSpacing: '-0.5px',
-    marginBottom: 8,
+  storiesContainer: {
+    maxWidth: 960,
+    margin: '0 auto',
+    padding: '40px 24px 48px',
   },
   siteTagline: {
     fontFamily: 'Inter, sans-serif',
     fontSize: 15,
     color: 'var(--color-text-secondary)',
+    textAlign: 'center',
+    marginBottom: 32,
   },
   grid: {
     listStyle: 'none',

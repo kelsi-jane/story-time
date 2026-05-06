@@ -2,6 +2,44 @@
 
 ---
 
+## Hamburger Nav Menu
+
+**As a reader, I want the hamburger menu to give me full site navigation in one place, with my personalized content at the top for quick access.**
+
+### Decisions
+- Opens as an overlay/drawer (not a full page navigation)
+- **Two sections:**
+  1. **Quick links (top)** — the reader's current panel cards in their preferred order, same data already loaded. This is the same content as the reader panel, surfaced here for readers who prefer the drawer over scrolling.
+  2. **All navigation (below)** — every other destination on the platform that isn't in the reader panel: Browse All Stories, Settings, About, etc. This is the full site map.
+- The reader panel is a curated "pinned" subset; the hamburger is the complete nav
+- Quick links section respects reader panel customization preferences (see Reader Panel Customization)
+
+### Scope
+- [ ] Hamburger button triggers an overlay drawer
+- [ ] Top section: reader panel quick links (reuses loaded data, no extra fetch)
+- [ ] Bottom section: full platform navigation links
+- [ ] Subtle divider and section labels between the two areas
+- [ ] Drawer closes on outside click or Escape key
+
+---
+
+## Reader Panel Customization
+
+**As a reader, I want to choose which cards appear in my reader panel and in what order, so the panel surfaces what matters most to me.**
+
+### Decisions
+- Preference is per-reader, persisted in localStorage (anonymous) or user settings (authenticated)
+- Default order is defined by the platform; reader can reorder or hide individual cards
+- Cards that have no data are hidden automatically regardless of preference (no empty sections)
+
+### Scope
+- [ ] Preference key in localStorage (e.g. `st-panel-prefs`) storing ordered list of enabled section IDs
+- [ ] Settings UI — accessible from reader settings page (see Reader Settings Page) or an inline panel edit mode
+- [ ] `ReaderPanel` reads preference order and filters accordingly before rendering
+- [ ] Default: all sections enabled in platform-defined order
+
+---
+
 ## Reader Settings Page
 
 **As a reader, I want a settings page where I can control reading preferences, so the reading surface stays clean and my choices persist across sessions.**
