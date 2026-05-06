@@ -199,3 +199,18 @@ The workflow in `.github/workflows/azure-static-web-apps.yml` builds and deploys
 - `.azurite/` is git-ignored — local storage emulator data
 - The SWA free tier supports one deployment environment; pull request preview environments require Standard tier
 - `VITE_INITIAL_ADMIN_USERNAMES` must be set in Azure SWA app settings before deploying — without it the admin whitelist is empty and no one can log in
+
+---
+
+## Media Assets
+
+### Story cover images
+
+Both the discovery card and the story title page use the same cover image URL. Both containers use a **3:2 aspect ratio** with `object-fit: cover` (center-cropped to fill).
+
+**Recommended upload size:** 1200×800px (3:2 landscape)
+
+**Implications for authors:**
+- Keep the primary subject centered — edges may be cropped on smaller viewports
+- A single image works for both surfaces; no separate thumbnail needed
+- The ratio may change in a future release — the admin field accepts any URL, so re-pointing to a new image requires only editing the story record

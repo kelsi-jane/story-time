@@ -44,7 +44,11 @@ export default function StoryTitle() {
     <div style={styles.page}>
       <Link to="/" style={styles.backLink}>← All stories</Link>
 
-      <div style={styles.cover} aria-hidden="true" />
+      {story.coverImageUrl ? (
+        <img src={story.coverImageUrl} alt={`Cover — ${story.title}`} style={{ ...styles.cover, objectFit: 'cover', display: 'block' }} />
+      ) : (
+        <div style={styles.cover} aria-hidden="true" />
+      )}
 
       <div style={styles.meta}>
         <h1 style={styles.title}>{story.title}</h1>
@@ -101,7 +105,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   cover: {
     width: '100%',
-    height: 280,
+    aspectRatio: '3/2',
     background: 'var(--color-surface-muted)',
     border: '1px solid var(--color-border)',
     borderRadius: 8,

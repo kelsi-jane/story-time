@@ -51,6 +51,17 @@ a:hover {
   font-style: italic;
 }
 
+.prose img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 480px;
+  object-fit: contain;
+  object-position: center;
+  border-radius: 4px;
+  margin: 2em auto;
+}
+
 /* ── Page card — chapter reading surface ───────────────────────────────── */
 
 .page-card {
