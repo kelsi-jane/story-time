@@ -1,4 +1,7 @@
-The invitation arrived on a Tuesday, folded inside a square of silver cloth that no one in Threadhaven could identify.
+
+![Spinning Wheel](https://www.wistful.me/assets/kelsi-jane/wedding-invitation-sketch.jpeg)
+
+The *invitation* arrived on a Tuesday, folded inside a square of silver cloth that no one in Threadhaven could identify.
 
 Mara turned it over in her hands — the fabric first, then the letter inside. The handwriting was careful, each letter formed as though the writer had thought twice before committing it to the page. She had seen that handwriting before. Once, on a note left tucked beneath her loom. Once, on a name stitched into the lining of a coat that had appeared on her doorstep in the middle of winter.
 
