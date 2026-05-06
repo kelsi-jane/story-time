@@ -95,7 +95,12 @@ export default function Chapter() {
             <div style={styles.rule} />
           </header>
 
-          <div className="prose" style={styles.prose}>
+          <div
+            className="prose"
+            style={styles.prose}
+            onCopy={(e) => e.preventDefault()}
+            onContextMenu={(e) => e.preventDefault()}
+          >
             <ReactMarkdown>{content}</ReactMarkdown>
           </div>
 
