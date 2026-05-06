@@ -11,7 +11,9 @@ const INITIAL_STORIES: Story[] = [
     tags: ['fantasy', 'romance'],
     seriesSlug: 'the-silver-thread',
     seriesOrder: 1,
+    authorUsername: 'kelsi-jane',
     publishedAt: '2026-01-15T00:00:00Z',
+    coverImageUrl: 'https://www.wistful.me/assets/kelsi-jane/loom-sketch.jpeg',
     chapters: [
       { id: 'ch1',  storyId: '1', title: 'The Loom at Dawn',      order: 1, blobPath: '/content/the-silver-thread/chapter-1.md' },
       { id: 'ch2',  storyId: '1', title: 'The Thread Remembers',   order: 2, blobPath: '/content/the-silver-thread/chapter-2.md' },
@@ -26,7 +28,9 @@ const INITIAL_STORIES: Story[] = [
     tags: ['fantasy', 'romance'],
     seriesSlug: 'the-silver-thread',
     seriesOrder: 2,
+    authorUsername: 'kelsi-jane',
     publishedAt: '2026-03-01T00:00:00Z',
+    coverImageUrl: 'https://www.wistful.me/assets/kelsi-jane/wedding-bells-sketch.png',
     chapters: [
       { id: 'ch2-1', storyId: '2', title: 'An Invitation Arrives', order: 1, blobPath: '/content/the-silver-thread-wedding-bells/chapter-1.md' },
       { id: 'ch2-2', storyId: '2', title: 'Three Days North',      order: 2, blobPath: '/content/the-silver-thread-wedding-bells/chapter-2.md' },

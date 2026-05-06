@@ -1,4 +1,6 @@
-The looms always sang before dawn.
+*The looms always sang before dawn.*
+
+![Spinning Wheel](https://www.wistful.me/assets/kelsi-jane/loom-sketch.jpeg)
 
 Mara had grown up with that sound — a soft, rhythmic hum that crept through the floorboards and curled under her blanket like a cat seeking warmth. By the time she was old enough to understand it, she had stopped noticing it entirely. The loom was simply there, the way breathing was simply there, the way the grey-violet sky above Threadhaven was simply there every morning when she opened her shutters.
 

@@ -264,12 +264,35 @@ On every authenticated session start, the client reads `st-reader-id` from local
 
 ---
 
-## Image Upload (Admin)
+## Self-Hosted Image Upload (Phase 2)
 
-**As an admin, I want to upload cover and chapter images that are constrained to brand guidelines before being stored.**
+**As an admin, I want to upload cover images directly rather than providing an external URL, so that images are reliably served and not dependent on third-party hosting.**
+
+### Current state
+
+Cover images are supported today via external URL — `coverImageUrl?: string` on `Story`, entered as a plain URL in the admin story form. Rendering is in place on both the story title page and discovery cards. No backend work is needed to use the current approach.
+
+The `coverImageUrl` field is a plain URL string. Switching from an external URL to a self-hosted blob URL is a field update only — no front-end or type system changes required. Both coexist naturally.
+
+### Why Phase 2
+
+Self-hosted images are the right long-term answer (no link rot, CDN-backed, content control), but require meaningful backend work. External URLs are acceptable at early scale; an author managing their own content will notice and fix broken images quickly.
+
+### Implementation (when built)
+
+| Area | Change |
+|---|---|
+| Azure Blob Storage | New container `story-images`, public read, private write |
+| `src/api/` | New Azure Function `POST /api/images/upload` — accepts `multipart/form-data`, writes to Blob, returns blob URL |
+| `StoryEdit.tsx` | Add file picker alongside URL input; on select, upload and populate `coverImageUrl`. Keep URL fallback. |
+| `StoryNew.tsx` | Same as StoryEdit |
+| `deployment.md` | Add `story-images` container setup to production deployment steps |
+
+Front-end rendering (`StoryTitle.tsx`, `Discovery.tsx`) requires **no changes**.
 
 ### Scope
-- [ ] Image upload UI in admin (story edit page)
-- [ ] Client-side aspect ratio and max dimension enforcement before write
-- [ ] Write to Azure Blob Storage (`images/{storySlug}/{imageId}.{ext}`)
-- [ ] Display uploaded images on StoryTitle and Chapter pages
+- [ ] Azure Blob Storage container `story-images` with public read access
+- [ ] `POST /api/images/upload` Azure Function
+- [ ] File picker UI in `StoryEdit.tsx` and `StoryNew.tsx`
+- [ ] Client-side validation: max file size, accepted MIME types (`image/jpeg`, `image/png`, `image/webp`)
+- [ ] `deployment.md` updated with container provisioning steps

@@ -206,11 +206,15 @@ The workflow in `.github/workflows/azure-static-web-apps.yml` builds and deploys
 
 ### Story cover images
 
-Both the discovery card and the story title page use the same cover image URL. Both containers use a **3:2 aspect ratio** with `object-fit: cover` (center-cropped to fill).
+Both the discovery card and the story title page use the same `coverImageUrl` field. Both containers use a **3:2 aspect ratio** with `object-fit: cover` (center-cropped to fill).
 
-**Recommended upload size:** 1200×800px (3:2 landscape)
+**Recommended size:** 1200×800px (3:2 landscape)
+
+**Current implementation:** external URL — the admin enters a direct image URL in the story edit form. No upload infrastructure is required. Images are served from wherever the URL points.
+
+**Phase 2:** self-hosted upload via Azure Blob Storage. See the backlog entry "Self-Hosted Image Upload (Phase 2)" for implementation details. When Phase 2 ships, existing external URLs continue to work — migration is optional per story.
 
 **Implications for authors:**
 - Keep the primary subject centered — edges may be cropped on smaller viewports
-- A single image works for both surfaces; no separate thumbnail needed
-- The ratio may change in a future release — the admin field accepts any URL, so re-pointing to a new image requires only editing the story record
+- A single image works for both the title page and the discovery card; no separate thumbnail is needed
+- The ratio may be adjusted in a future release — the admin field accepts any URL, so re-pointing to a new image requires only editing the story record

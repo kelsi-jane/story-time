@@ -1,8 +1,10 @@
 The road north was not a difficult one, as roads went.
 
+![Horse & Carriage](https://www.wistful.me/assets/kelsi-jane/carriage-sketch.png)
+
 That was what Mara told herself on the first day, when the weather was fine and her pack sat comfortably between her shoulders and the villages came at regular intervals with their warm windows and the smell of bread. She told herself the same thing on the second day, when the weather turned indifferent and the villages grew further apart. By the third day she had stopped telling herself things about the road and was simply walking it.
 
-She had brought the silver thread.
+***She had brought the silver thread.***
 
 She wasn't sure why — it wasn't as though it could help her navigate, and it certainly couldn't keep the rain off — but leaving it behind had felt wrong in a way she couldn't articulate. It sat at the bottom of her pack now, wound on its small bone spool, quiet. It had been quiet since she'd left Threadhaven. She had checked, once, on the first evening, pressing her thumb against it in the firelight of a waystation. Nothing. Not even a whisper.
 
