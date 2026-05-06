@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 export interface ReaderPanelItem {
@@ -7,6 +7,7 @@ export interface ReaderPanelItem {
 }
 
 export interface ReaderPanelSection {
+  id: string;
   heading: string;
   items: ReaderPanelItem[];
   hasMore?: boolean;
@@ -14,13 +15,22 @@ export interface ReaderPanelSection {
 
 interface Props {
   sections: ReaderPanelSection[];
+  onScrollEdge?: (atEnd: boolean) => void;
 }
 
-export default function ReaderPanel({ sections }: Props) {
+export default function ReaderPanel({ sections, onScrollEdge }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
   const dragStart = useRef<{ x: number; scrollLeft: number } | null>(null);
   const didDrag = useRef(false);
   const [dragging, setDragging] = useState(false);
+
+  function checkEdge() {
+    if (!panelRef.current || !onScrollEdge) return;
+    const { scrollLeft, clientWidth, scrollWidth } = panelRef.current;
+    onScrollEdge(scrollLeft + clientWidth >= scrollWidth - 2);
+  }
+
+  useEffect(() => { checkEdge(); }, [sections]);
 
   function onMouseDown(e: React.MouseEvent) {
     if (!panelRef.current) return;
@@ -34,6 +44,7 @@ export default function ReaderPanel({ sections }: Props) {
     const dx = e.pageX - dragStart.current.x;
     if (Math.abs(dx) > 5) didDrag.current = true;
     panelRef.current.scrollLeft = dragStart.current.scrollLeft - dx;
+    checkEdge();
   }
 
   function onDragEnd() {
@@ -60,6 +71,7 @@ export default function ReaderPanel({ sections }: Props) {
       onMouseMove={onMouseMove}
       onMouseUp={onDragEnd}
       onMouseLeave={onDragEnd}
+      onScroll={checkEdge}
       onClickCapture={onClickCapture}
     >
       {sections.map((section) => (

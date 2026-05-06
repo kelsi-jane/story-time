@@ -8,6 +8,7 @@ import StoryNew from './pages/admin/StoryNew';
 import StoryEdit from './pages/admin/StoryEdit';
 import ChapterNew from './pages/admin/ChapterNew';
 import Admins from './pages/admin/Admins';
+import Settings from './pages/reader/Settings';
 
 export const router = createBrowserRouter([
   { path: '/', element: <Discovery /> },
@@ -20,4 +21,5 @@ export const router = createBrowserRouter([
   { path: '/admin/stories/:slug', element: <StoryEdit /> },
   { path: '/admin/stories/:slug/chapters/new', element: <ChapterNew /> },
   { path: '/admin/stories/:slug/chapters/:chapterId/edit', element: <ChapterNew /> },
+  { path: '/settings', element: <Settings /> },
 ]);

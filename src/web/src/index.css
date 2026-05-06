@@ -324,7 +324,11 @@ textarea.input {
 /* ── Discovery banner ───────────────────────────────────────────────────── */
 
 .discovery-banner {
-  background: var(--color-surface-muted);
+  background: var(--color-text-secondary);
+}
+
+.discovery-section-banner {
+  background: transparent;
 }
 
 .discovery-banner-inner {
@@ -340,15 +344,14 @@ textarea.input {
   font-family: 'Inter', sans-serif;
   font-size: 15px;
   font-weight: 500;
-  color: #ffffff;
-  letter-spacing: -0.1px;
+  color: var(--color-text-primary);
 }
 
 .site-banner-logo {
   font-family: 'Inter', sans-serif;
   font-size: 17px;
   font-weight: 500;
-  color: var(--color-text-secondary);
+  color: #ffffff;
   letter-spacing: -0.3px;
 }
 
@@ -364,16 +367,8 @@ textarea.input {
   justify-content: space-between;
 }
 
-.discovery-section-banner {
-  background: var(--color-text-secondary);
-}
-
-.discovery-section-banner .discovery-banner-title {
-  color: #ffffff;
-}
-
 .discovery-section-banner .discovery-banner-btn {
-  color: #ffffff;
+  color: var(--color-text-secondary);
 }
 
 .site-banner-user {
@@ -420,7 +415,13 @@ textarea.input {
 .site-banner-welcome {
   font-family: 'Inter', sans-serif;
   font-size: 13px;
-  color: var(--color-text-secondary);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+@media (max-width: 600px) {
+  .site-banner-welcome {
+    display: none;
+  }
 }
 
 .site-banner-avatar {
@@ -434,13 +435,13 @@ textarea.input {
 .site-banner-signin {
   font-family: 'Inter', sans-serif;
   font-size: 13px;
-  color: var(--color-text-secondary);
+  color: #ffffff;
   text-decoration: none;
   justify-self: end;
 }
 
 .site-banner-signin:hover {
-  color: var(--color-accent);
+  color: rgba(255, 255, 255, 0.75);
 }
 
 .discovery-banner-btn {
@@ -467,7 +468,7 @@ textarea.input {
 
 .reader-panel-wrapper {
   position: relative;
-  margin-bottom: 32px;
+  margin-bottom: 16px;
 }
 
 .reader-panel-wrapper::after {
@@ -479,6 +480,11 @@ textarea.input {
   width: 48px;
   background: linear-gradient(to right, transparent, var(--color-background));
   pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.reader-panel-wrapper.at-end::after {
+  opacity: 0;
 }
 
 .reader-panel {
@@ -553,6 +559,76 @@ textarea.input {
 }
 
 .reader-panel-more:hover {
+  color: var(--color-accent);
+}
+
+
+/* ── Theme swatches ─────────────────────────────────────────────────────── */
+
+.theme-swatches {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.theme-swatch {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.theme-swatch.active {
+  border-color: var(--color-text-primary);
+}
+
+.theme-swatch:hover:not(.active) {
+  border-color: var(--color-border);
+}
+
+/* ── Settings panel list ────────────────────────────────────────────────── */
+
+.settings-panel-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.settings-panel-row:last-child {
+  border-bottom: none;
+}
+
+.settings-panel-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-panel-label.locked {
+  color: var(--color-text-secondary);
+}
+
+.settings-panel-lock {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.settings-panel-signin {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+}
+
+.settings-panel-signin:hover {
   color: var(--color-accent);
 }
 
