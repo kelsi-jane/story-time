@@ -164,6 +164,68 @@ A cropped screenshot or AI inpainting can remove a watermark. Its primary value 
 
 ---
 
+## Reader Accounts (Authentication)
+
+**As a reader, I want to create an account so that my reading history, bookmarks, and preferences follow me across devices and browsers.**
+
+### Timing
+
+Targeted for Phase 3. Data loss risk from delaying is proportional to reader volume — at expected early scale, the exposure is small. Revisit if readership grows meaningfully before Phase 3 begins.
+
+**GitHub OAuth as a bridge option:** GitHub OAuth is already wired into the SWA instance for admin auth. It could serve as a low-cost early option for reader identity without building a full account system. Downside: GitHub accounts are a poor fit for a general reader audience. Worth considering only if the reader base skews technical in early phases.
+
+### Migration from anonymous identity
+
+When reader accounts are introduced, each reader's anonymous `st-reader-id` (generated on first visit and stored in localStorage) is the migration key. On first authenticated session per device, the client sends the anonymous ID to the server, which reassigns all `ReadingEvent` records carrying that ID to the authenticated user.
+
+**Multi-device is handled naturally:** each device runs the merge independently. Two devices → two merge calls → both event sets land under the same account.
+
+**Migration cutoff:** Remove the anonymous-to-authenticated merge code 60–90 days after reader auth ships. Events still in localStorage after that window are dropped. Document the cutoff date in `design/deployment.md` at the time of release.
+
+**Truly unrecoverable** (no merge strategy fixes these):
+- Reader cleared browser data before creating an account
+- Events collected during a private/incognito session
+- Visits on a new device made after the account already exists
+
+### Scope (when built)
+
+- [ ] Reader account creation and login flow
+- [ ] Session persistence (cookie or token)
+- [ ] Anonymous ID merge endpoint — called on first login per device, idempotent
+- [ ] `st-reader-id` in localStorage updated to `userId` post-merge so future events write under the real ID
+- [ ] All reading history, bookmarks, and preferences scoped to `userId` going forward
+
+### Future / out of scope at launch
+
+- Merging multiple anonymous IDs into one account (reader used two browsers before signing up) — accepted gap for Phase 1 of auth
+- Social login providers beyond GitHub (email/password, Google, etc.)
+
+---
+
+## Merge Anonymous Reading History on First Login
+
+**As a reader who browsed anonymously before creating an account, I want my reading history to carry over automatically, so that "pick up where you left off" and other personalized features work from day one.**
+
+### How it works
+
+On every authenticated session start, the client reads `st-reader-id` from localStorage and sends it to the server alongside the session credential. The server reassigns all `ReadingEvent` records with that `readerId` to the authenticated `userId`, then returns. The client updates `st-reader-id` in localStorage to the `userId` so all future events write under the real ID.
+
+### Acceptance criteria
+
+- [ ] Merge is triggered on first login per device, automatically — no reader action required
+- [ ] Merge is idempotent — safe to call on every login; re-running with an already-merged anonymous ID is a no-op
+- [ ] Events from multiple devices are all recoverable — each device's anonymous ID is merged independently
+- [ ] If the anonymous ID has no corresponding events (localStorage was cleared, or new device), the merge is a no-op with no error
+- [ ] `st-reader-id` is updated to `userId` after merge — future events on this device write under the real ID
+- [ ] Pre-merge events are queryable under the authenticated account after merge completes
+
+### Out of scope
+
+- Merging multiple anonymous IDs from different browsers on the same device into one account — accepted data loss
+- Retroactive merge for anonymous IDs older than the migration cutoff window
+
+---
+
 ## Image Upload (Admin)
 
 **As an admin, I want to upload cover and chapter images that are constrained to brand guidelines before being stored.**

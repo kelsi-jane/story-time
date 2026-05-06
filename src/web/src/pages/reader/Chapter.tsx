@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import { useSwipeable } from 'react-swipeable';
-import { getStory, getChapterContent } from '../../api';
+import { getStory, getChapterContent, logReadingEvent } from '../../api';
 import type { Story, Chapter as ChapterType } from '../../types';
 
 export default function Chapter() {
@@ -45,6 +45,7 @@ export default function Chapter() {
         setChapter(ch);
         const text = await getChapterContent(ch.blobPath);
         setContent(text);
+        logReadingEvent(ch, slug).catch(() => { /* logging failure must not affect reading */ });
       })
       .catch(() => setError('This content couldn\'t be loaded. Try reloading the page.'))
       .finally(() => setLoading(false));
