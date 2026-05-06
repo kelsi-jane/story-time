@@ -1,0 +1,21 @@
+User-agent: *
+Allow: /
+Disallow: /stories/*/chapters/
+
+# Known AI training crawlers — disallow chapter content
+User-agent: GPTBot
+Disallow: /stories/*/chapters/
+
+User-agent: ClaudeBot
+Disallow: /stories/*/chapters/
+
+User-agent: CCBot
+Disallow: /stories/*/chapters/
+
+User-agent: anthropic-ai
+Disallow: /stories/*/chapters/
+
+User-agent: Google-Extended
+Disallow: /stories/*/chapters/
+
+Crawl-delay: 10
