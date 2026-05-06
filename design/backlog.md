@@ -105,6 +105,65 @@ PublicationEvent {
 
 ---
 
+## Secure Content Delivery (IP Protection — Story 3)
+
+**As an author, I need chapter content to be impossible to bulk-scrape via direct API or storage access, so that my work cannot be programmatically extracted even by technically sophisticated actors.**
+
+### Why this is critical
+
+This must land **before blob storage goes live**. If Azure Blob Storage containers are set to public access, the content URLs are trivially discoverable and downloadable regardless of any client-side protections. `robots.txt` and `user-select: none` are irrelevant once someone has direct blob access.
+
+### Architecture requirement
+
+**Content must never live at a publicly accessible URL.** All chapter content is served exclusively through an Azure Function at `/api/chapters/{id}/content`. The function is the only entity with storage credentials.
+
+### Scope
+
+- [ ] Azure Blob Storage content container: **private** (no anonymous read access)
+- [ ] `GET /api/chapters/{id}/content` Azure Function: validates published status, fetches blob server-side, returns content body
+- [ ] Client `getChapterContent()` changes from fetching a blob URL to calling `/api/chapters/{id}/content`
+- [ ] Remove `blobPath` from any client-visible API response — it is an internal server detail only
+- [ ] Function-level hardening: reject missing/mismatched `Referer` header; reject known scraper `User-Agent` strings
+- [ ] Rate limiting: cap chapter content fetches per reader ID per hour (leverages reading history infrastructure)
+
+### Future / out of scope at this story
+
+- Reader authentication gating (serve content only to authenticated readers) — Phase 3
+- SAS URL generation for time-limited access — not needed if content is always proxied
+
+---
+
+## Reading Surface Watermark (IP Protection — Story 4)
+
+**As an author, I want screenshots of my content to be attributable, so that if my work appears elsewhere I can demonstrate it was accessed from this platform.**
+
+### Approach
+
+A low-opacity overlay on the `.page-card` reading surface displaying the reader's identifier and access date. Rendered via a CSS pseudo-element or `position: fixed` layer with `pointer-events: none` so it does not interfere with the reading experience.
+
+### Content
+
+- Reader identifier: anonymous UUID from `st-reader-id` (already implemented), or authenticated username when reader accounts exist
+- Access date
+- Site name / copyright line
+
+### Dependency
+
+The `getOrCreateReaderId()` function from `src/web/src/api/reader-identity.ts` is already built. This story is unblocked.
+
+### Limitation
+
+A cropped screenshot or AI inpainting can remove a watermark. Its primary value is legal: it establishes when and by whom content was accessed from this platform, supporting a DMCA or infringement claim.
+
+### Scope
+
+- [ ] Watermark overlay component or CSS layer on `.page-card`
+- [ ] Reader ID sourced from `getOrCreateReaderId()` (anonymous) or auth context (authenticated)
+- [ ] Opacity and styling that is visible in a screenshot without materially degrading the reading experience
+- [ ] Ensure watermark does not appear on admin-facing pages or the story title page
+
+---
+
 ## Image Upload (Admin)
 
 **As an admin, I want to upload cover and chapter images that are constrained to brand guidelines before being stored.**
