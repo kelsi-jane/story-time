@@ -222,7 +222,11 @@ export default function Discovery() {
             {stories.map((story) => (
               <li key={story.id} style={styles.card}>
                 <Link to={`/stories/${story.slug}`} style={styles.cardLink}>
-                  <div style={styles.cardCover} aria-hidden="true" />
+                  {story.coverImageUrl ? (
+                    <img src={story.coverImageUrl} alt={`Cover — ${story.title}`} style={{ ...styles.cardCover, objectFit: 'cover', display: 'block' }} />
+                  ) : (
+                    <div style={styles.cardCover} aria-hidden="true" />
+                  )}
                   <div style={styles.cardBody}>
                     <h2 style={styles.cardTitle}>
                       {story.title}
@@ -290,7 +294,8 @@ const styles: Record<string, React.CSSProperties> = {
     color: 'inherit',
   },
   cardCover: {
-    height: 160,
+    width: '100%',
+    aspectRatio: '3/2',
     background: 'var(--color-surface-muted)',
     borderBottom: '1px solid var(--color-border)',
   },

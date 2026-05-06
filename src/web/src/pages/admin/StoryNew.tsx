@@ -22,6 +22,7 @@ export default function StoryNew() {
     slug: '',
     subtitle: '',
     description: '',
+    coverImageUrl: '',
     tags: [] as string[],
     seriesSlug: '',
     seriesOrder: '',
@@ -57,6 +58,7 @@ export default function StoryNew() {
         slug: form.slug.trim(),
         subtitle: form.subtitle.trim() || undefined,
         description: form.description.trim() || undefined,
+        coverImageUrl: form.coverImageUrl.trim() || undefined,
         tags: form.tags,
         seriesSlug: form.seriesSlug.trim() || undefined,
         seriesOrder: form.seriesOrder ? parseInt(form.seriesOrder) : undefined,
@@ -102,6 +104,11 @@ export default function StoryNew() {
         <div className="field">
           <label htmlFor="description">Description</label>
           <textarea id="description" className="input" rows={3} value={form.description} onChange={(e) => set('description', e.target.value)} />
+        </div>
+
+        <div className="field">
+          <label htmlFor="coverImageUrl">Cover image URL <span style={{ fontWeight: 400, color: 'var(--color-text-secondary)' }}>(optional)</span></label>
+          <input id="coverImageUrl" className="input" value={form.coverImageUrl} onChange={(e) => set('coverImageUrl', e.target.value)} placeholder="https://…" />
         </div>
 
         <div className="field">

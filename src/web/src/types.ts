@@ -37,6 +37,7 @@ export interface Story {
   slug: string;
   subtitle?: string;
   description?: string;
+  coverImageUrl?: string;
   tags: string[];
   seriesSlug?: string;
   seriesOrder?: number;
