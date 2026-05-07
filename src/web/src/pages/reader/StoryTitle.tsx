@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { getStory, getAuthor } from '../../api';
-import type { Story, Author } from '../../types';
+import { getStory, getAuthor, getBookmarks, getReadingEvents } from '../../api';
+import type { Story, Author, Bookmark, Chapter as ChapterType } from '../../types';
 
 export default function StoryTitle() {
   const { slug } = useParams<{ slug: string }>();
   const [story, setStory] = useState<Story | null>(null);
   const [author, setAuthor] = useState<Author | null>(null);
+  const [bookmark, setBookmark] = useState<Bookmark | null>(null);
+  const [lastReadChapter, setLastReadChapter] = useState<ChapterType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -16,9 +18,18 @@ export default function StoryTitle() {
       .then(async (s) => {
         if (!s) { setError('This story couldn\'t be found.'); return; }
         setStory(s);
-        if (s.authorUsername) {
-          const a = await getAuthor(s.authorUsername);
-          setAuthor(a);
+        const [a, bm, events] = await Promise.all([
+          s.authorUsername ? getAuthor(s.authorUsername) : Promise.resolve(null),
+          getBookmarks({ storyId: s.id }),
+          getReadingEvents({ storyId: s.id }),
+        ]);
+        setAuthor(a);
+        setBookmark(bm[0] ?? null);
+        if (events.length > 0) {
+          const latest = [...events].sort((a, b) =>
+            new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime()
+          )[0];
+          setLastReadChapter(s.chapters.find((c) => c.id === latest.chapterId) ?? null);
         }
       })
       .catch(() => setError('This story couldn\'t be loaded. Try reloading the page.'))
@@ -38,11 +49,17 @@ export default function StoryTitle() {
     </div>
   );
 
-  const firstChapter = story.chapters[0];
+  const sortedChapters = story.chapters.slice().sort((a, b) => a.order - b.order);
+  const firstChapter = sortedChapters[0];
+  const bookmarkedChapter = bookmark ? story.chapters.find((c) => c.id === bookmark.chapterId) : null;
 
   return (
     <div style={styles.page}>
-      <Link to="/" style={styles.backLink}>← All stories</Link>
+      <nav style={styles.breadcrumb}>
+        <Link to="/" style={styles.breadcrumbLink}>Home</Link>
+        <span style={styles.breadcrumbSep}>›</span>
+        <span style={styles.breadcrumbCurrent}>{story.title}{story.subtitle ? `: ${story.subtitle}` : ''}</span>
+      </nav>
 
       {story.coverImageUrl ? (
         <img src={story.coverImageUrl} alt={`Cover — ${story.title}`} style={{ ...styles.cover, objectFit: 'cover', display: 'block' }} />
@@ -65,7 +82,32 @@ export default function StoryTitle() {
           ))}
         </div>
 
-        {firstChapter && (
+        {bookmarkedChapter ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <Link to={`/stories/${story.slug}/chapters/${bookmarkedChapter.id}`} style={styles.beginButton}>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 2h8a1 1 0 0 1 1 1v9l-5-3-5 3V3a1 1 0 0 1 1-1z" />
+              </svg>
+              Chapter {bookmarkedChapter.order} · {bookmarkedChapter.title}
+            </Link>
+            {firstChapter && firstChapter.id !== bookmarkedChapter.id && (
+              <Link to={`/stories/${story.slug}/chapters/${firstChapter.id}`} style={styles.restartLink}>
+                Start from the beginning
+              </Link>
+            )}
+          </div>
+        ) : lastReadChapter ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <Link to={`/stories/${story.slug}/chapters/${lastReadChapter.id}`} style={styles.beginButton}>
+              Continue — Chapter {lastReadChapter.order} · {lastReadChapter.title}
+            </Link>
+            {firstChapter && firstChapter.id !== lastReadChapter.id && (
+              <Link to={`/stories/${story.slug}/chapters/${firstChapter.id}`} style={styles.restartLink}>
+                Start from the beginning
+              </Link>
+            )}
+          </div>
+        ) : firstChapter && (
           <Link to={`/stories/${story.slug}/chapters/${firstChapter.id}`} style={styles.beginButton}>
             Begin reading
           </Link>
@@ -159,7 +201,9 @@ const styles: Record<string, React.CSSProperties> = {
     textTransform: 'lowercase',
   },
   beginButton: {
-    display: 'inline-block',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 8,
     fontFamily: 'Inter, sans-serif',
     fontSize: 14,
     fontWeight: 500,
@@ -167,6 +211,12 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'var(--color-accent)',
     borderRadius: 4,
     padding: '10px 20px',
+    textDecoration: 'none',
+  },
+  restartLink: {
+    fontFamily: 'Inter, sans-serif',
+    fontSize: 13,
+    color: 'var(--color-text-secondary)',
     textDecoration: 'none',
   },
   divider: {
@@ -212,11 +262,27 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 15,
     color: 'var(--color-text-primary)',
   },
-  backLink: {
+  breadcrumb: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+  },
+  breadcrumbLink: {
     fontFamily: 'Inter, sans-serif',
     fontSize: 13,
     color: 'var(--color-text-secondary)',
     textDecoration: 'none',
+  },
+  breadcrumbSep: {
+    fontFamily: 'Inter, sans-serif',
+    fontSize: 13,
+    color: 'var(--color-border)',
+  },
+  breadcrumbCurrent: {
+    fontFamily: 'Inter, sans-serif',
+    fontSize: 13,
+    color: 'var(--color-text-primary)',
   },
   centered: {
     display: 'flex',

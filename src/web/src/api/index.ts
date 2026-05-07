@@ -1,4 +1,4 @@
-import type { Story, Chapter, AdminUser, Author, ReadingEvent } from '../types';
+import type { Story, Chapter, AdminUser, Author, ReadingEvent, Bookmark } from '../types';
 import { getOrCreateReaderId } from './reader-identity';
 import { getAuthUser } from './auth';
 
@@ -204,6 +204,64 @@ export async function getChapterContent(blobPath: string): Promise<string> {
   const res = await fetch(blobPath);
   if (!res.ok) throw new Error(`Failed to load chapter: ${res.status}`);
   return res.text();
+}
+
+// ── Bookmarks ────────────────────────────────────────────────────────────────────
+
+const BOOKMARK_EVENTS_KEY = 'st-story-bookmarks';
+
+function loadBookmarks(): Bookmark[] {
+  try {
+    const raw = localStorage.getItem(BOOKMARK_EVENTS_KEY);
+    if (raw) return JSON.parse(raw) as Bookmark[];
+  } catch {}
+  return [];
+}
+
+function saveBookmarks(events: Bookmark[]): void {
+  try {
+    localStorage.setItem(BOOKMARK_EVENTS_KEY, JSON.stringify(events));
+  } catch {}
+}
+export async function placeBookmark(
+  chapter: Pick<Chapter, 'id' | 'storyId' | 'order'>,
+  storySlug: string,
+): Promise<void> {
+  const authUser = await getAuthUser();
+  const readerId = authUser?.userId ?? getOrCreateReaderId();
+  const event: Bookmark = {
+    id: crypto.randomUUID(),
+    readerId,
+    storyId: chapter.storyId,
+    chapterId: chapter.id,
+    storySlug,
+    chapterOrder: chapter.order,
+    occurredAt: new Date().toISOString(),
+  };
+  const events = loadBookmarks().filter((e) => e.storyId !== chapter.storyId);
+  events.push(event);
+  saveBookmarks(events);
+}
+
+export async function getBookmarks(filters?: {
+  readerId?: string;
+  storyId?: string;
+  chapterId?: string;
+  from?: string;
+  to?: string;
+}): Promise<Bookmark[]> {
+  let events = loadBookmarks();
+  if (!filters) return events;
+  if (filters.readerId)  events = events.filter((e) => e.readerId === filters.readerId);
+  if (filters.storyId)   events = events.filter((e) => e.storyId === filters.storyId);
+  if (filters.chapterId) events = events.filter((e) => e.chapterId === filters.chapterId);
+  if (filters.from)      events = events.filter((e) => e.occurredAt >= filters.from!);
+  if (filters.to)        events = events.filter((e) => e.occurredAt <= filters.to!);
+  return events;
+}
+
+export async function removeBookmark(chapterId: string): Promise<void> {
+  saveBookmarks(loadBookmarks().filter((e) => e.chapterId !== chapterId));
 }
 
 // ── Stories ─────────────────────────────────────────────────────────────────

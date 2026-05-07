@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getStories, getAuthors, getAuthor, getReadingEvents } from '../../api';
+import { getStories, getAuthors, getAuthor, getReadingEvents, getBookmarks } from '../../api';
 import { getAuthUser } from '../../api/auth';
 import { getPreferences, PANEL_SECTION_REGISTRY } from '../../api/preferences';
 import type { Story, Author } from '../../types';
@@ -69,16 +69,6 @@ const SparkleIcon = () => (
 // TODO: replace with real data once bookmarks, favorites, and reading-list APIs are built
 const PLACEHOLDER_SECTIONS: ReaderPanelSection[] = [
   {
-    id: 'bookmarks',
-    heading: 'Bookmarks',
-    icon: <BookmarkIcon />,
-    items: [
-      { label: 'Chapter 1 · The Silver Thread', sublabel: 'The Silver Thread', href: '/stories/the-silver-thread/chapters/ch1' },
-      { label: 'Chapter 2 · The Silver Thread: Wedding Bells', sublabel: 'The Silver Thread: Wedding Bells', href: '/stories/the-silver-thread-wedding-bells/chapters/ch2' },
-    ],
-    hasMore: false,
-  },
-  {
     id: 'favorite-stories',
     heading: 'Favorite Stories',
     icon: <HeartIcon />,
@@ -122,6 +112,7 @@ export default function Discovery() {
 
   const [panelAtEnd, setPanelAtEnd] = useState(false);
   const [lastReadSection, setLastReadSection] = useState<ReaderPanelSection | null>(null);
+  const [latestBookmarkSection, setLatestBookmarkSection] = useState<ReaderPanelSection | null>(null);
   const prefs = getPreferences();
 
   useEffect(() => {
@@ -133,8 +124,8 @@ export default function Discovery() {
       setWelcomeName(firstName);
     });
 
-    Promise.all([getStories(), getAuthors(), getReadingEvents()])
-      .then(([s, a, events]) => {
+    Promise.all([getStories(), getAuthors(), getReadingEvents(), getBookmarks()])
+      .then(([s, a, events, bookmarks]) => {
         const publishedStories = s.filter((story) => story.publishedAt !== null);
         setStories(publishedStories);
         setAuthorMap(new Map(a.map((auth) => [auth.githubUsername, auth])));
@@ -151,6 +142,27 @@ export default function Discovery() {
               id: 'pick-up',
               heading: 'Last Read',
               icon: <ClockIcon />,
+              items: [{
+                label: story.subtitle ? `${story.title}: ${story.subtitle}` : story.title,
+                sublabel: `Chapter ${chapter.order} · ${chapter.title}`,
+                href: `/stories/${story.slug}/chapters/${chapter.id}`,
+              }],
+              hasMore: false,
+            });
+          }
+        }
+
+        if (bookmarks.length > 0) {
+          const latest = [...bookmarks].sort((a, b) =>
+            new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime()
+          )[0];
+          const story = publishedStories.find((s) => s.slug === latest.storySlug);
+          const chapter = story?.chapters.find((c) => c.id === latest.chapterId);
+          if (story && chapter) {
+            setLatestBookmarkSection({
+              id: 'bookmarks',
+              heading: 'Bookmarks',
+              icon: <BookmarkIcon />,
               items: [{
                 label: story.subtitle ? `${story.title}: ${story.subtitle}` : story.title,
                 sublabel: `Chapter ${chapter.order} · ${chapter.title}`,
@@ -242,6 +254,7 @@ export default function Discovery() {
           <ReaderPanel
             sections={[
               ...(lastReadSection ? [lastReadSection] : []),
+              ...(latestBookmarkSection ? [latestBookmarkSection] : []),
               ...PLACEHOLDER_SECTIONS,
             ].filter((s) => {
               const config = PANEL_SECTION_REGISTRY.find((r) => r.id === s.id);

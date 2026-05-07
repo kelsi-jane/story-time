@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import { useSwipeable } from 'react-swipeable';
-import { getStory, getChapterContent, logReadingEvent } from '../../api';
+import { getStory, getChapterContent, logReadingEvent, getBookmarks, placeBookmark, removeBookmark } from '../../api';
 import type { Story, Chapter as ChapterType } from '../../types';
 
 export default function Chapter() {
@@ -14,6 +14,7 @@ export default function Chapter() {
   const [content, setContent] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isBookmarked, setIsBookmarked] = useState(false);
 
   useEffect(() => {
     const meta = document.createElement('meta');
@@ -46,10 +47,22 @@ export default function Chapter() {
         const text = await getChapterContent(ch.blobPath);
         setContent(text);
         logReadingEvent(ch, slug).catch(() => { /* logging failure must not affect reading */ });
+        getBookmarks({ chapterId: ch.id }).then((bm) => setIsBookmarked(bm.length > 0));
       })
       .catch(() => setError('This content couldn\'t be loaded. Try reloading the page.'))
       .finally(() => setLoading(false));
   }, [slug, chapterId]);
+
+  async function toggleBookmark() {
+    if (!chapter || !slug) return;
+    if (isBookmarked) {
+      await removeBookmark(chapter.id);
+      setIsBookmarked(false);
+    } else {
+      await placeBookmark(chapter, slug);
+      setIsBookmarked(true);
+    }
+  }
 
   const sorted = story?.chapters.slice().sort((a, b) => a.order - b.order) ?? [];
   const currentIndex = sorted.findIndex((c) => c.id === chapterId);
@@ -88,9 +101,25 @@ export default function Chapter() {
     <div style={styles.outer}>
       <div style={styles.inner}>
         <nav style={styles.topNav}>
-          <Link to={`/stories/${story.slug}`} style={styles.navLink}>
-            ← {story.title}{story.subtitle ? `: ${story.subtitle}` : ''}
-          </Link>
+          <div style={styles.breadcrumb}>
+            <Link to="/" style={styles.breadcrumbLink}>Home</Link>
+            <span style={styles.breadcrumbSep}>›</span>
+            <Link to={`/stories/${story.slug}`} style={styles.breadcrumbLink}>
+              {story.title}{story.subtitle ? `: ${story.subtitle}` : ''}
+            </Link>
+            <span style={styles.breadcrumbSep}>›</span>
+            <span style={styles.breadcrumbCurrent}>Chapter {chapter.order}</span>
+          </div>
+          <button
+            onClick={toggleBookmark}
+            style={styles.bookmarkBtn}
+            aria-label={isBookmarked ? 'Remove bookmark' : 'Bookmark this chapter'}
+            title={isBookmarked ? 'Remove bookmark' : 'Bookmark this chapter'}
+          >
+            <svg width="16" height="16" viewBox="0 0 14 14" fill={isBookmarked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: isBookmarked ? 'var(--color-accent)' : 'var(--color-text-secondary)' }}>
+              <path d="M3 2h8a1 1 0 0 1 1 1v9l-5-3-5 3V3a1 1 0 0 1 1-1z" />
+            </svg>
+          </button>
         </nav>
 
         <div
@@ -160,6 +189,44 @@ const styles: Record<string, React.CSSProperties> = {
   },
   topNav: {
     marginBottom: 20,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  breadcrumb: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    flexWrap: 'wrap',
+    minWidth: 0,
+  },
+  breadcrumbLink: {
+    fontFamily: 'Inter, sans-serif',
+    fontSize: 13,
+    color: 'var(--color-text-secondary)',
+    textDecoration: 'none',
+    whiteSpace: 'nowrap',
+  },
+  breadcrumbSep: {
+    fontFamily: 'Inter, sans-serif',
+    fontSize: 13,
+    color: 'var(--color-border)',
+  },
+  breadcrumbCurrent: {
+    fontFamily: 'Inter, sans-serif',
+    fontSize: 13,
+    color: 'var(--color-text-primary)',
+    whiteSpace: 'nowrap',
+  },
+  bookmarkBtn: {
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    padding: 4,
+    display: 'flex',
+    alignItems: 'center',
+    lineHeight: 1,
   },
   articleHeader: {
     marginBottom: 40,
