@@ -15,8 +15,11 @@ const INITIAL_STORIES: Story[] = [
     publishedAt: '2026-01-15T00:00:00Z',
     coverImageUrl: 'https://www.wistful.me/assets/kelsi-jane/loom-sketch.jpeg',
     chapters: [
-      { id: 'ch1',  storyId: '1', title: 'The Loom at Dawn',      order: 1, blobPath: '/content/the-silver-thread/chapter-1.md' },
+      { id: 'ch1',  storyId: '1', title: 'The Loom at Dawn',        order: 1, blobPath: '/content/the-silver-thread/chapter-1.md' },
       { id: 'ch2',  storyId: '1', title: 'The Thread Remembers',   order: 2, blobPath: '/content/the-silver-thread/chapter-2.md' },
+      { id: 'ch3',  storyId: '1', title: 'The Map in the Weave',   order: 3, blobPath: '/content/the-silver-thread/chapter-3.md' },
+      { id: 'ch4',  storyId: '1', title: 'The Boy Who Didn\'t Know', order: 4, blobPath: '/content/the-silver-thread/chapter-4.md' },
+      { id: 'ch5',  storyId: '1', title: 'What Is Bound',          order: 5, blobPath: '/content/the-silver-thread/chapter-5.md' },
     ],
   },
   {
