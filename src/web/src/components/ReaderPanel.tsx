@@ -3,12 +3,14 @@ import { Link } from 'react-router-dom';
 
 export interface ReaderPanelItem {
   label: string;
+  sublabel?: string;
   href: string;
 }
 
 export interface ReaderPanelSection {
   id: string;
   heading: string;
+  icon?: React.ReactNode;
   items: ReaderPanelItem[];
   hasMore?: boolean;
 }
@@ -75,13 +77,19 @@ export default function ReaderPanel({ sections, onScrollEdge }: Props) {
       onClickCapture={onClickCapture}
     >
       {sections.map((section) => (
-        <div key={section.heading} className="reader-panel-section">
-          <h2 className="reader-panel-heading">{section.heading}</h2>
+        <div key={section.id} className="reader-panel-section">
+          <div className="reader-panel-heading-row">
+            <h2 className="reader-panel-heading">{section.heading}</h2>
+            {section.icon && <span className="reader-panel-section-icon">{section.icon}</span>}
+          </div>
           <hr style={{ border: 'none', borderTop: '1px solid var(--color-border)', margin: 0 }} />
           <ul className="reader-panel-list">
             {section.items.map((item) => (
               <li key={item.href} className="reader-panel-item">
-                <Link to={item.href} draggable={false}>{item.label}</Link>
+                <Link to={item.href} draggable={false} className="reader-panel-item-link">
+                  <span className="reader-panel-item-label">{item.label}</span>
+                  {item.sublabel && <span className="reader-panel-item-sublabel">{item.sublabel}</span>}
+                </Link>
               </li>
             ))}
           </ul>
