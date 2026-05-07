@@ -45,3 +45,13 @@ export interface Story {
   chapters: Chapter[];
   authorUsername?: string;
 }
+
+export interface Bookmark {
+  id: string;
+  readerId: string;
+  storyId: string;
+  chapterId: string;
+  storySlug: string;
+  chapterOrder: number;
+  occurredAt: string;
+}

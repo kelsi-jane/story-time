@@ -525,6 +525,12 @@ textarea.input {
   flex-shrink: 0;
 }
 
+.reader-panel-heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .reader-panel-heading {
   font-family: 'Inter', sans-serif;
   font-size: 11px;
@@ -532,6 +538,13 @@ textarea.input {
   color: var(--color-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.08em;
+}
+
+.reader-panel-section-icon {
+  display: flex;
+  align-items: center;
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
 }
 
 .reader-panel-list {
@@ -542,6 +555,16 @@ textarea.input {
 }
 
 .reader-panel-item {
+  overflow: hidden;
+}
+
+.reader-panel-item-link {
+  display: block;
+  text-decoration: none;
+}
+
+.reader-panel-item-label {
+  display: block;
   font-family: 'Inter', sans-serif;
   font-size: 14px;
   color: var(--color-text-primary);
@@ -550,12 +573,18 @@ textarea.input {
   text-overflow: ellipsis;
 }
 
-.reader-panel-item a {
-  color: var(--color-text-primary);
-  text-decoration: none;
+.reader-panel-item-sublabel {
+  display: block;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
 }
 
-.reader-panel-item a:hover {
+.reader-panel-item-link:hover .reader-panel-item-label {
   color: var(--color-accent);
 }
 

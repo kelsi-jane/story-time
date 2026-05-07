@@ -1,57 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getStories, getAuthors, getAuthor } from '../../api';
+import { getStories, getAuthors, getAuthor, getReadingEvents, getBookmarks } from '../../api';
 import { getAuthUser } from '../../api/auth';
 import { getPreferences, PANEL_SECTION_REGISTRY } from '../../api/preferences';
 import type { Story, Author } from '../../types';
 import ReaderPanel, { type ReaderPanelSection } from '../../components/ReaderPanel';
-
-// TODO: replace with real data from reading history, bookmarks, and favorites APIs
-const PLACEHOLDER_SECTIONS: ReaderPanelSection[] = [
-  {
-    id: 'pick-up',
-    heading: 'Last Read',
-    items: [
-      { label: 'Chapter 2 · The Silver Thread', href: '/stories/the-silver-thread/chapters/ch2' },
-    ],
-    hasMore: false,
-  },
-  {
-    id: 'bookmarks',
-    heading: 'Bookmarks',
-    items: [
-      { label: 'Chapter 1 · The Silver Thread', href: '/stories/the-silver-thread/chapters/ch1' },
-      { label: 'Chapter 2 · The Silver Thread: Wedding Bells', href: '/stories/the-silver-thread/chapters-wedding-bells/ch2' },
-    ],
-    hasMore: false,
-  },
-  {
-    id: 'favorite-stories',
-    heading: 'Favorite Stories',
-    items: [
-      { label: 'The Silver Thread', href: '/stories/the-silver-thread' },
-      { label: 'The Silver Thread: Wedding Bells', href: '/stories/the-silver-thread-wedding-bells' },
-    ],
-    hasMore: false,
-  },
-  {
-    id: 'reading-list',
-    heading: 'Reading List',
-    items: [
-      { label: 'The Silver Thread: Wedding Bells', href: '/stories/the-silver-thread-wedding-bells' },
-      { label: 'The Silver Thread', href: '/stories/the-silver-thread' },
-    ],
-    hasMore: false,
-  },
-  {
-    id: 'new-this-week',
-    heading: 'New This Week',
-    items: [
-      { label: 'The Silver Thread: Wedding Bells', href: '/stories/the-silver-thread-wedding-bells' },
-    ],
-    hasMore: false,
-  },
-];
 
 const Hamburger = () => (
   <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round">
@@ -79,6 +32,73 @@ const SlidersIcon = () => (
   </svg>
 );
 
+const ClockIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="7" cy="7" r="5.5" />
+    <polyline points="7,4 7,7 9,9" />
+  </svg>
+);
+
+const BookmarkIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 2h8a1 1 0 0 1 1 1v9l-5-3-5 3V3a1 1 0 0 1 1-1z" />
+  </svg>
+);
+
+const HeartIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M7 12S1.5 8 1.5 4.5a3 3 0 0 1 5.5-1.6 3 3 0 0 1 5.5 1.6C12.5 8 7 12 7 12z" />
+  </svg>
+);
+
+const ListIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+    <line x1="1" y1="3.5" x2="13" y2="3.5" />
+    <line x1="1" y1="7"   x2="13" y2="7"   />
+    <line x1="1" y1="10.5" x2="13" y2="10.5" />
+  </svg>
+);
+
+const SparkleIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M7 1v2M7 11v2M1 7h2M11 7h2M3 3l1.5 1.5M9.5 9.5 11 11M11 3l-1.5 1.5M4.5 9.5 3 11" />
+    <circle cx="7" cy="7" r="2" />
+  </svg>
+);
+
+// TODO: replace with real data once bookmarks, favorites, and reading-list APIs are built
+const PLACEHOLDER_SECTIONS: ReaderPanelSection[] = [
+  {
+    id: 'favorite-stories',
+    heading: 'Favorite Stories',
+    icon: <HeartIcon />,
+    items: [
+      { label: 'The Silver Thread', href: '/stories/the-silver-thread' },
+      { label: 'The Silver Thread: Wedding Bells', href: '/stories/the-silver-thread-wedding-bells' },
+    ],
+    hasMore: false,
+  },
+  {
+    id: 'reading-list',
+    heading: 'Reading List',
+    icon: <ListIcon />,
+    items: [
+      { label: 'The Silver Thread: Wedding Bells', href: '/stories/the-silver-thread-wedding-bells' },
+      { label: 'The Silver Thread', href: '/stories/the-silver-thread' },
+    ],
+    hasMore: false,
+  },
+  {
+    id: 'new-this-week',
+    heading: 'New This Week',
+    icon: <SparkleIcon />,
+    items: [
+      { label: 'The Silver Thread: Wedding Bells', href: '/stories/the-silver-thread-wedding-bells' },
+    ],
+    hasMore: false,
+  },
+];
+
 export default function Discovery() {
   const [stories, setStories] = useState<Story[]>([]);
   const [authorMap, setAuthorMap] = useState<Map<string, Author>>(new Map());
@@ -91,6 +111,8 @@ export default function Discovery() {
   const profileRef = useRef<HTMLDivElement>(null);
 
   const [panelAtEnd, setPanelAtEnd] = useState(false);
+  const [lastReadSection, setLastReadSection] = useState<ReaderPanelSection | null>(null);
+  const [latestBookmarkSection, setLatestBookmarkSection] = useState<ReaderPanelSection | null>(null);
   const prefs = getPreferences();
 
   useEffect(() => {
@@ -102,10 +124,54 @@ export default function Discovery() {
       setWelcomeName(firstName);
     });
 
-    Promise.all([getStories(), getAuthors()])
-      .then(([s, a]) => {
-        setStories(s.filter((story) => story.publishedAt !== null));
+    Promise.all([getStories(), getAuthors(), getReadingEvents(), getBookmarks()])
+      .then(([s, a, events, bookmarks]) => {
+        const publishedStories = s.filter((story) => story.publishedAt !== null);
+        setStories(publishedStories);
         setAuthorMap(new Map(a.map((auth) => [auth.githubUsername, auth])));
+
+        if (events.length > 0) {
+          setBannerTitle('Discover More');
+          const latest = [...events].sort((a, b) =>
+            new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime()
+          )[0];
+          const story = publishedStories.find((s) => s.slug === latest.storySlug);
+          const chapter = story?.chapters.find((c) => c.id === latest.chapterId);
+          if (story && chapter) {
+            setLastReadSection({
+              id: 'pick-up',
+              heading: 'Last Read',
+              icon: <ClockIcon />,
+              items: [{
+                label: story.subtitle ? `${story.title}: ${story.subtitle}` : story.title,
+                sublabel: `Chapter ${chapter.order} · ${chapter.title}`,
+                href: `/stories/${story.slug}/chapters/${chapter.id}`,
+              }],
+              hasMore: false,
+            });
+          }
+        }
+
+        if (bookmarks.length > 0) {
+          const latest = [...bookmarks].sort((a, b) =>
+            new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime()
+          )[0];
+          const story = publishedStories.find((s) => s.slug === latest.storySlug);
+          const chapter = story?.chapters.find((c) => c.id === latest.chapterId);
+          if (story && chapter) {
+            setLatestBookmarkSection({
+              id: 'bookmarks',
+              heading: 'Bookmarks',
+              icon: <BookmarkIcon />,
+              items: [{
+                label: story.subtitle ? `${story.title}: ${story.subtitle}` : story.title,
+                sublabel: `Chapter ${chapter.order} · ${chapter.title}`,
+                href: `/stories/${story.slug}/chapters/${chapter.id}`,
+              }],
+              hasMore: false,
+            });
+          }
+        }
       })
       .catch(() => setError('This library couldn\'t be loaded. Try reloading the page.'))
       .finally(() => setLoading(false));
@@ -116,12 +182,6 @@ export default function Discovery() {
       }
     };
     document.addEventListener('mousedown', handleOutsideClick);
-
-    // TODO: replace with getReadingEvents() once reading history module is restored
-    try {
-      const raw = localStorage.getItem('st-reading-events');
-      if (raw && (JSON.parse(raw) as unknown[]).length > 0) setBannerTitle('Discover More');
-    } catch { /* leave default */ }
 
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
@@ -192,7 +252,11 @@ export default function Discovery() {
       <div style={styles.page}>
         <div className={`reader-panel-wrapper${panelAtEnd ? ' at-end' : ''}`}>
           <ReaderPanel
-            sections={PLACEHOLDER_SECTIONS.filter((s) => {
+            sections={[
+              ...(lastReadSection ? [lastReadSection] : []),
+              ...(latestBookmarkSection ? [latestBookmarkSection] : []),
+              ...PLACEHOLDER_SECTIONS,
+            ].filter((s) => {
               const config = PANEL_SECTION_REGISTRY.find((r) => r.id === s.id);
               if (!config) return false;
               if (config.requiresAuth && !authUsername) return false;
