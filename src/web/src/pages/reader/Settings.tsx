@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import SiteBanner from '../../components/SiteBanner';
 import {
   PANEL_SECTION_REGISTRY,
   getPreferences,
@@ -45,9 +46,13 @@ export default function Settings() {
   }
 
   return (
+    <>
+    <SiteBanner />
     <div style={styles.page}>
       <nav style={styles.nav}>
-        <Link to="/" style={styles.back}>← Back</Link>
+        <Link to="/" style={styles.back}>Home</Link>
+        <span style={styles.breadcrumbSep}>›</span>
+        <span style={styles.breadcrumbCurrent}>Reading Preferences</span>
       </nav>
 
       <h1 className="admin-page-heading" style={{ marginBottom: 40 }}>Reading Preferences</h1>
@@ -109,6 +114,7 @@ export default function Settings() {
         </div>
       </section>
     </div>
+    </>
   );
 }
 
@@ -119,6 +125,9 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '32px 24px 64px',
   },
   nav: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
     marginBottom: 32,
   },
   back: {
@@ -126,6 +135,16 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 13,
     color: 'var(--color-text-secondary)',
     textDecoration: 'none',
+  },
+  breadcrumbSep: {
+    fontFamily: 'Inter, sans-serif',
+    fontSize: 13,
+    color: 'var(--color-border)',
+  },
+  breadcrumbCurrent: {
+    fontFamily: 'Inter, sans-serif',
+    fontSize: 13,
+    color: 'var(--color-text-primary)',
   },
   section: {
     marginBottom: 48,

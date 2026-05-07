@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { getStory, getAuthor, getBookmarks, getReadingEvents } from '../../api';
 import type { Story, Author, Bookmark, Chapter as ChapterType } from '../../types';
+import SiteBanner from '../../components/SiteBanner';
 
 export default function StoryTitle() {
   const { slug } = useParams<{ slug: string }>();
@@ -54,6 +55,8 @@ export default function StoryTitle() {
   const bookmarkedChapter = bookmark ? story.chapters.find((c) => c.id === bookmark.chapterId) : null;
 
   return (
+    <>
+    <SiteBanner />
     <div style={styles.page}>
       <nav style={styles.breadcrumb}>
         <Link to="/" style={styles.breadcrumbLink}>Home</Link>
@@ -136,6 +139,7 @@ export default function StoryTitle() {
         </ol>
       </section>
     </div>
+    </>
   );
 }
 
