@@ -218,3 +218,46 @@ Both the discovery card and the story title page use the same `coverImageUrl` fi
 - Keep the primary subject centered — edges may be cropped on smaller viewports
 - A single image works for both the title page and the discovery card; no separate thumbnail is needed
 - The ratio may be adjusted in a future release — the admin field accepts any URL, so re-pointing to a new image requires only editing the story record
+
+---
+
+## Chapter Content (Blob Storage)
+
+### Container setup
+
+Chapter content is stored in a private Azure Blob Storage container. Create it once before deploying:
+
+```bash
+az storage container create \
+  --name chapter-content \
+  --account-name storytimestorage \
+  --resource-group story-time-rg \
+  --public-access off
+```
+
+### How content is served
+
+The Azure Function at `GET /api/chapters/{id}/content` fetches the blob at key `{id}.md` from the `chapter-content` container and streams it to the reader. The container is private — the Function is the only path to the content.
+
+When an admin saves a chapter via the editor, `PUT /api/chapters/{id}/content` uploads the markdown to the same key. The chapter's `blobPath` in the story metadata is updated to `/api/chapters/{id}/content`.
+
+### Seeded chapter migration
+
+Chapters in the initial seed (`ch1`–`ch5` for The Silver Thread, etc.) still use static file paths (`/content/...`) served by SWA's static hosting. They migrate automatically: when an admin opens and re-saves any seeded chapter, the content is uploaded to blob and `blobPath` is updated. No bulk migration script is required.
+
+### Local full-stack development
+
+Full-stack dev (including chapter content) requires both the Functions host and Azurite running alongside the Vite dev server:
+
+```bash
+# Terminal 1 — storage emulator (--skipApiVersionCheck works around SDK/Azurite version mismatch)
+cd src/api && npx azurite --location .azurite --silent --skipApiVersionCheck
+
+# Terminal 2 — Azure Functions
+cd src/api && npm run start
+
+# Terminal 3 — frontend (proxies /api/* to localhost:7071)
+cd src/web && npm run dev
+```
+
+The Vite dev server proxies all `/api/*` requests to `http://localhost:7071` automatically. Frontend-only dev (without running the Functions) still works for UI work — seeded chapters load from static files as before.

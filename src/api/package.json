@@ -1,6 +1,7 @@
 {
   "name": "wistful-me-api",
   "version": "1.0.0",
+  "main": "dist/src/functions/*.js",
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
@@ -8,11 +9,12 @@
     "prestart": "npm run build"
   },
   "dependencies": {
-    "@azure/functions": "^4.0.0",
     "@azure/data-tables": "^13.0.0",
+    "@azure/functions": "^4.0.0",
     "@azure/storage-blob": "^12.0.0"
   },
   "devDependencies": {
+    "@types/node": "^25.6.0",
     "typescript": "^5.0.0"
   }
 }

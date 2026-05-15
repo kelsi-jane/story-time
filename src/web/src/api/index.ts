@@ -15,8 +15,11 @@ const INITIAL_STORIES: Story[] = [
     publishedAt: '2026-01-15T00:00:00Z',
     coverImageUrl: 'https://www.wistful.me/assets/kelsi-jane/loom-sketch.jpeg',
     chapters: [
-      { id: 'ch1',  storyId: '1', title: 'The Loom at Dawn',      order: 1, blobPath: '/content/the-silver-thread/chapter-1.md' },
-      { id: 'ch2',  storyId: '1', title: 'The Thread Remembers',   order: 2, blobPath: '/content/the-silver-thread/chapter-2.md' },
+      { id: 'ch1',  storyId: '1', title: 'The Loom at Dawn',          order: 1, blobPath: '/api/chapters/ch1/content' },
+      { id: 'ch2',  storyId: '1', title: 'The Thread Remembers',     order: 2, blobPath: '/api/chapters/ch2/content' },
+      { id: 'ch3',  storyId: '1', title: 'The Map in the Weave',     order: 3, blobPath: '/api/chapters/ch3/content' },
+      { id: 'ch4',  storyId: '1', title: 'The Boy Who Didn\'t Know', order: 4, blobPath: '/api/chapters/ch4/content' },
+      { id: 'ch5',  storyId: '1', title: 'What Is Bound',            order: 5, blobPath: '/api/chapters/ch5/content' },
     ],
   },
   {
@@ -32,8 +35,8 @@ const INITIAL_STORIES: Story[] = [
     publishedAt: '2026-03-01T00:00:00Z',
     coverImageUrl: 'https://www.wistful.me/assets/kelsi-jane/wedding-bells-sketch.png',
     chapters: [
-      { id: 'ch2-1', storyId: '2', title: 'An Invitation Arrives', order: 1, blobPath: '/content/the-silver-thread-wedding-bells/chapter-1.md' },
-      { id: 'ch2-2', storyId: '2', title: 'Three Days North',      order: 2, blobPath: '/content/the-silver-thread-wedding-bells/chapter-2.md' },
+      { id: 'ch2-1', storyId: '2', title: 'An Invitation Arrives', order: 1, blobPath: '/api/chapters/ch2-1/content' },
+      { id: 'ch2-2', storyId: '2', title: 'Three Days North',      order: 2, blobPath: '/api/chapters/ch2-2/content' },
     ],
   },
 ];
@@ -61,9 +64,6 @@ function loadContent(): Map<string, string> {
   return new Map();
 }
 
-function saveContent(m: Map<string, string>): void {
-  localStorage.setItem(CONTENT_KEY, JSON.stringify([...m]));
-}
 
 let stories: Story[] = loadStories();
 const mockContent: Map<string, string> = loadContent();
@@ -294,9 +294,21 @@ export async function createChapter(
   const story = stories.find((s) => s.slug === storySlug);
   if (!story) throw new Error('Story not found');
   const id = `ch-${Date.now()}`;
-  const chapter: Chapter = { id, storyId: story.id, title: data.title, order: data.order, blobPath: `mock://${id}` };
-  mockContent.set(id, content);
-  saveContent(mockContent);
+
+  const res = await fetch(`/api/chapters/${id}/content`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    body: content,
+  });
+  if (!res.ok) throw new Error('Failed to upload chapter content');
+
+  const chapter: Chapter = {
+    id,
+    storyId: story.id,
+    title: data.title,
+    order: data.order,
+    blobPath: `/api/chapters/${id}/content`,
+  };
   stories = stories.map((s) =>
     s.slug === storySlug ? { ...s, chapters: [...s.chapters, chapter] } : s,
   );
@@ -310,23 +322,24 @@ export async function updateChapter(
   data: { title: string },
   content: string,
 ): Promise<Chapter> {
+  const res = await fetch(`/api/chapters/${chapterId}/content`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    body: content,
+  });
+  if (!res.ok) throw new Error('Failed to upload chapter content');
+
   stories = stories.map((s) => {
     if (s.slug !== storySlug) return s;
-    return { ...s, chapters: s.chapters.map((c) => c.id === chapterId ? { ...c, title: data.title } : c) };
+    return {
+      ...s,
+      chapters: s.chapters.map((c) =>
+        c.id === chapterId
+          ? { ...c, title: data.title, blobPath: `/api/chapters/${chapterId}/content` }
+          : c,
+      ),
+    };
   });
-  const contentKey = (() => {
-    const ch = stories.find((s) => s.slug === storySlug)?.chapters.find((c) => c.id === chapterId);
-    if (!ch) return chapterId;
-    if (ch.blobPath.startsWith('mock://')) return ch.blobPath.slice('mock://'.length);
-    // For file-backed chapters, store under the chapterId key and update blobPath to mock://
-    stories = stories.map((s) => {
-      if (s.slug !== storySlug) return s;
-      return { ...s, chapters: s.chapters.map((c) => c.id === chapterId ? { ...c, blobPath: `mock://${chapterId}` } : c) };
-    });
-    return chapterId;
-  })();
-  mockContent.set(contentKey, content);
-  saveContent(mockContent);
   saveStories(stories);
   return stories.find((s) => s.slug === storySlug)!.chapters.find((c) => c.id === chapterId)!;
 }
