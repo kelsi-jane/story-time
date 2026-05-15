@@ -15,11 +15,11 @@ const INITIAL_STORIES: Story[] = [
     publishedAt: '2026-01-15T00:00:00Z',
     coverImageUrl: 'https://www.wistful.me/assets/kelsi-jane/loom-sketch.jpeg',
     chapters: [
-      { id: 'ch1',  storyId: '1', title: 'The Loom at Dawn',          order: 1, blobPath: '/api/chapters/ch1/content' },
-      { id: 'ch2',  storyId: '1', title: 'The Thread Remembers',     order: 2, blobPath: '/api/chapters/ch2/content' },
-      { id: 'ch3',  storyId: '1', title: 'The Map in the Weave',     order: 3, blobPath: '/api/chapters/ch3/content' },
-      { id: 'ch4',  storyId: '1', title: 'The Boy Who Didn\'t Know', order: 4, blobPath: '/api/chapters/ch4/content' },
-      { id: 'ch5',  storyId: '1', title: 'What Is Bound',            order: 5, blobPath: '/api/chapters/ch5/content' },
+      { id: 'ch1-1', storyId: '1', title: 'The Loom at Dawn',          order: 1, blobPath: '/api/chapters/ch1-1/content' },
+      { id: 'ch1-2', storyId: '1', title: 'The Thread Remembers',     order: 2, blobPath: '/api/chapters/ch1-2/content' },
+      { id: 'ch1-3', storyId: '1', title: 'The Map in the Weave',     order: 3, blobPath: '/api/chapters/ch1-3/content' },
+      { id: 'ch1-4', storyId: '1', title: 'The Boy Who Didn\'t Know', order: 4, blobPath: '/api/chapters/ch1-4/content' },
+      { id: 'ch1-5', storyId: '1', title: 'What Is Bound',            order: 5, blobPath: '/api/chapters/ch1-5/content' },
     ],
   },
   {
