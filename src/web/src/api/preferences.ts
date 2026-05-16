@@ -44,10 +44,35 @@ export function getPreferences(): Preferences {
   }
 }
 
-export function savePreferences(p: Preferences): void {
+export function savePreferences(p: Preferences, username?: string): void {
   try {
     localStorage.setItem(PREFS_KEY, JSON.stringify(p));
   } catch { /* storage full — fail silently */ }
+  if (username) pushPreferences(username, p).catch(() => {});
+}
+
+export async function syncPreferences(username: string): Promise<void> {
+  try {
+    const res = await fetch(`/api/users/${username}/preferences`);
+    if (!res.ok) return;
+    const remote = await res.json() as Partial<Preferences>;
+    const local = getPreferences();
+    // Remote wins for explicit choices; re-apply default-merge logic
+    const merged: Preferences = {
+      theme: remote.theme ?? local.theme,
+      unpinnedPanels: remote.unpinnedPanels ?? local.unpinnedPanels,
+      pinnedPanels: remote.pinnedPanels ?? local.pinnedPanels,
+    };
+    localStorage.setItem(PREFS_KEY, JSON.stringify(merged));
+  } catch { /* network failure — keep local */ }
+}
+
+export async function pushPreferences(username: string, p: Preferences): Promise<void> {
+  await fetch(`/api/users/${username}/preferences`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(p),
+  });
 }
 
 export function applyTheme(theme: Theme): void {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getStories, getAuthors, getReadingEvents, getBookmarks } from '../../api';
-import { getPreferences, PANEL_SECTION_REGISTRY } from '../../api/preferences';
+import { getPreferences, syncPreferences, applyTheme, PANEL_SECTION_REGISTRY } from '../../api/preferences';
 import type { Story, Author } from '../../types';
 import ReaderPanel, { type ReaderPanelSection } from '../../components/ReaderPanel';
 import SiteBanner from '../../components/SiteBanner';
@@ -103,7 +103,16 @@ export default function Discovery() {
   const [panelAtEnd, setPanelAtEnd] = useState(false);
   const [lastReadSection, setLastReadSection] = useState<ReaderPanelSection | null>(null);
   const [latestBookmarkSection, setLatestBookmarkSection] = useState<ReaderPanelSection | null>(null);
-  const prefs = getPreferences();
+  const [prefs, setPrefs] = useState(getPreferences);
+
+  useEffect(() => {
+    if (!authUsername) return;
+    syncPreferences(authUsername).then(() => {
+      const p = getPreferences();
+      setPrefs(p);
+      applyTheme(p.theme);
+    });
+  }, [authUsername]);
 
   useEffect(() => {
     Promise.all([getStories(), getAuthors(), getReadingEvents(), getBookmarks()])
