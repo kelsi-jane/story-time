@@ -39,10 +39,14 @@ Additional prerequisites:
 ```bash
 cd src/api
 npm install
-npx azurite --location .azurite --silent
+npx azurite --location .azurite --silent --skipApiVersionCheck
 ```
 
 Or use the [Azurite VS Code extension](https://marketplace.visualstudio.com/items?itemName=Azurite.azurite) — right-click the status bar item to start.
+
+To upgrade Azurite locally:
+```npm install -g azurite@latest
+```
 
 **2. Configure local API settings**
 
@@ -151,12 +155,6 @@ az staticwebapp appsettings set \
 
 Push to `main`. GitHub Actions picks it up automatically:
 
-```bash
-git push origin main
-```
-
-The workflow in `.github/workflows/azure-static-web-apps.yml` builds and deploys both the frontend and API. Deployment typically takes 2–3 minutes.
-
 ### 6. Verify
 
 - Visit `https://<your-swa-hostname>.azurestaticapps.net` — reader surfaces should load
@@ -222,6 +220,25 @@ Both the discovery card and the story title page use the same `coverImageUrl` fi
 ---
 
 ## Chapter Content (Blob Storage)
+
+### User data container
+
+User preferences are stored in a private `user-data` container. Create it once:
+
+```bash
+az storage container create \
+  --name user-data \
+  --account-name storytimestorage \
+  --resource-group story-time-rg \
+  --public-access off
+```
+
+For local dev with Azurite:
+```bash
+az storage container create --name user-data --connection-string "UseDevelopmentStorage=true"
+```
+
+---
 
 ### Container setup
 

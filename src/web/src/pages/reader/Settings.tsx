@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import SiteBanner from '../../components/SiteBanner';
 import {
   PANEL_SECTION_REGISTRY,
   getPreferences,
   savePreferences,
+  syncPreferences,
   applyTheme,
   type Theme,
 } from '../../api/preferences';
@@ -22,10 +23,19 @@ export default function Settings() {
   const isAuthenticated = user !== null;
   const [prefs, setPrefs] = useState(getPreferences);
 
+  useEffect(() => {
+    if (!user) return;
+    syncPreferences(user.username).then(() => {
+      const p = getPreferences();
+      setPrefs(p);
+      applyTheme(p.theme);
+    });
+  }, [user?.username]);
+
   function handleTheme(theme: Theme) {
     const updated = { ...prefs, theme };
     setPrefs(updated);
-    savePreferences(updated);
+    savePreferences(updated, user?.username);
     applyTheme(theme);
   }
 
@@ -42,7 +52,7 @@ export default function Settings() {
           unpinnedPanels: prefs.unpinnedPanels.filter((p) => p !== id),
         };
     setPrefs(updated);
-    savePreferences(updated);
+    savePreferences(updated, user?.username);
   }
 
   return (
