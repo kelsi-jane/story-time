@@ -155,12 +155,6 @@ az staticwebapp appsettings set \
 
 Push to `main`. GitHub Actions picks it up automatically:
 
-```bash
-git push origin main
-```
-
-The workflow in `.github/workflows/azure-static-web-apps.yml` builds and deploys both the frontend and API. Deployment typically takes 2–3 minutes.
-
 ### 6. Verify
 
 - Visit `https://<your-swa-hostname>.azurestaticapps.net` — reader surfaces should load
