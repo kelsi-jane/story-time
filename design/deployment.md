@@ -258,10 +258,6 @@ The Azure Function at `GET /api/chapters/{id}/content` fetches the blob at key `
 
 When an admin saves a chapter via the editor, `PUT /api/chapters/{id}/content` uploads the markdown to the same key. The chapter's `blobPath` in the story metadata is updated to `/api/chapters/{id}/content`.
 
-### Seeded chapter migration
-
-Chapters in the initial seed (`ch1`–`ch5` for The Silver Thread, etc.) still use static file paths (`/content/...`) served by SWA's static hosting. They migrate automatically: when an admin opens and re-saves any seeded chapter, the content is uploaded to blob and `blobPath` is updated. No bulk migration script is required.
-
 ### Local full-stack development
 
 Full-stack dev (including chapter content) requires both the Functions host and Azurite running alongside the Vite dev server:
@@ -277,4 +273,65 @@ cd src/api && npm run start
 cd src/web && npm run dev
 ```
 
-The Vite dev server proxies all `/api/*` requests to `http://localhost:7071` automatically. Frontend-only dev (without running the Functions) still works for UI work — seeded chapters load from static files as before.
+The Vite dev server proxies all `/api/*` requests to `http://localhost:7071` automatically.
+
+---
+
+## Story & Chapter Metadata (Table Storage)
+
+Story and chapter metadata is stored in Azure Table Storage. Two tables are required: `Stories` and `Chapters`.
+
+### Table setup
+
+```bash
+# Local (Azurite)
+az storage table create --name Stories --connection-string "UseDevelopmentStorage=true"
+az storage table create --name Chapters --connection-string "UseDevelopmentStorage=true"
+
+# Production
+az storage table create --name Stories --account-name storytimestorage --resource-group story-time-rg
+az storage table create --name Chapters --account-name storytimestorage --resource-group story-time-rg
+```
+
+### Seed script
+
+After creating the tables, run the seed script once to populate the initial stories and chapters:
+
+```bash
+# Local
+cd src/api
+AZURE_STORAGE_CONNECTION_STRING="UseDevelopmentStorage=true" npx ts-node src/seed.ts
+
+# Production (PowerShell)
+cd src/api
+$env:AZURE_STORAGE_CONNECTION_STRING="<real-connstr>"
+npx ts-node src/seed.ts
+```
+
+The seed script is idempotent — it uses `upsertEntity` and can be re-run safely.
+
+### Table structure
+
+**`Stories` table** — PartitionKey: `"story"`, RowKey: `{slug}`
+
+| Field | Type | Notes |
+|---|---|---|
+| id | string | UUID |
+| title | string | |
+| subtitle | string | Empty string if absent |
+| description | string | Empty string if absent |
+| tags | string | JSON array e.g. `'["fantasy","romance"]'` |
+| seriesSlug | string | Empty string if absent |
+| seriesOrder | Int32 | `0` if absent |
+| authorUsername | string | |
+| publishedAt | string | ISO timestamp or empty string |
+| coverImageUrl | string | Empty string if absent |
+
+**`Chapters` table** — PartitionKey: `{storySlug}`, RowKey: `{chapterId}`
+
+| Field | Type | Notes |
+|---|---|---|
+| storyId | string | |
+| title | string | |
+| order | Int32 | |
+| blobPath | string | `/api/chapters/{id}/content` |

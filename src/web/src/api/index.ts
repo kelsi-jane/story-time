@@ -2,72 +2,6 @@ import type { Story, Chapter, AdminUser, Author, ReadingEvent, Bookmark } from '
 import { getOrCreateReaderId } from './reader-identity';
 import { getAuthUser } from './auth';
 
-const INITIAL_STORIES: Story[] = [
-  {
-    id: '1',
-    title: 'The Silver Thread',
-    slug: 'the-silver-thread',
-    description: 'In a village where dreams are woven into cloth, a girl discovers a single silver thread that connects her to a boy she\'s never met.',
-    tags: ['fantasy', 'romance'],
-    seriesSlug: 'the-silver-thread',
-    seriesOrder: 1,
-    authorUsername: 'kelsi-jane',
-    publishedAt: '2026-01-15T00:00:00Z',
-    coverImageUrl: 'https://www.wistful.me/assets/kelsi-jane/loom-sketch.jpeg',
-    chapters: [
-      { id: 'ch1-1', storyId: '1', title: 'The Loom at Dawn',          order: 1, blobPath: '/api/chapters/ch1-1/content' },
-      { id: 'ch1-2', storyId: '1', title: 'The Thread Remembers',     order: 2, blobPath: '/api/chapters/ch1-2/content' },
-      { id: 'ch1-3', storyId: '1', title: 'The Map in the Weave',     order: 3, blobPath: '/api/chapters/ch1-3/content' },
-      { id: 'ch1-4', storyId: '1', title: 'The Boy Who Didn\'t Know', order: 4, blobPath: '/api/chapters/ch1-4/content' },
-      { id: 'ch1-5', storyId: '1', title: 'What Is Bound',            order: 5, blobPath: '/api/chapters/ch1-5/content' },
-    ],
-  },
-  {
-    id: '2',
-    title: 'The Silver Thread',
-    subtitle: 'Wedding Bells',
-    slug: 'the-silver-thread-wedding-bells',
-    description: 'An invitation arrives on silver cloth, and Mara must travel north to witness a wedding that will change everything she thought she understood about the thread.',
-    tags: ['fantasy', 'romance'],
-    seriesSlug: 'the-silver-thread',
-    seriesOrder: 2,
-    authorUsername: 'kelsi-jane',
-    publishedAt: '2026-03-01T00:00:00Z',
-    coverImageUrl: 'https://www.wistful.me/assets/kelsi-jane/wedding-bells-sketch.png',
-    chapters: [
-      { id: 'ch2-1', storyId: '2', title: 'An Invitation Arrives', order: 1, blobPath: '/api/chapters/ch2-1/content' },
-      { id: 'ch2-2', storyId: '2', title: 'Three Days North',      order: 2, blobPath: '/api/chapters/ch2-2/content' },
-    ],
-  },
-];
-
-const STORIES_KEY = 'st-mock-stories';
-const CONTENT_KEY = 'st-mock-content';
-
-function loadStories(): Story[] {
-  try {
-    const raw = localStorage.getItem(STORIES_KEY);
-    if (raw) return JSON.parse(raw) as Story[];
-  } catch {}
-  return [...INITIAL_STORIES];
-}
-
-function saveStories(s: Story[]): void {
-  localStorage.setItem(STORIES_KEY, JSON.stringify(s));
-}
-
-function loadContent(): Map<string, string> {
-  try {
-    const raw = localStorage.getItem(CONTENT_KEY);
-    if (raw) return new Map(JSON.parse(raw) as [string, string][]);
-  } catch {}
-  return new Map();
-}
-
-
-let stories: Story[] = loadStories();
-const mockContent: Map<string, string> = loadContent();
-
 // ── Admin whitelist ──────────────────────────────────────────────────────────
 
 const INITIAL_ADMINS: AdminUser[] = (import.meta.env.VITE_INITIAL_ADMIN_USERNAMES as string | undefined ?? '')
@@ -84,10 +18,6 @@ const INITIAL_ADMINS: AdminUser[] = (import.meta.env.VITE_INITIAL_ADMIN_USERNAME
 const ADMINS_KEY = 'st-mock-admins';
 
 function loadAdmins(): AdminUser[] {
-  /*try {
-    const raw = localStorage.getItem(ADMINS_KEY);
-    if (raw) return JSON.parse(raw) as AdminUser[];
-  } catch {}*/
   return [...INITIAL_ADMINS];
 }
 
@@ -178,35 +108,132 @@ export async function transferPrimary(toId: string): Promise<void> {
   saveAdmins(admins);
 }
 
-// ── Migration ────────────────────────────────────────────────────────────────
-
-export async function migrateStoryAuthors(defaultUsername: string): Promise<Story[]> {
-  if (!stories.some((s) => !s.authorUsername)) return stories;
-  stories = stories.map((s) => (s.authorUsername ? s : { ...s, authorUsername: defaultUsername }));
-  saveStories(stories);
-  return stories;
-}
-
-// ── Read ────────────────────────────────────────────────────────────────────
+// ── Stories ──────────────────────────────────────────────────────────────────
 
 export async function getStories(): Promise<Story[]> {
-  return stories;
+  const res = await fetch('/api/stories');
+  if (!res.ok) throw new Error('Failed to load stories');
+  return res.json();
 }
 
 export async function getStory(slug: string): Promise<Story | null> {
-  return stories.find((s) => s.slug === slug) ?? null;
+  const res = await fetch(`/api/stories/${slug}`);
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error('Failed to load story');
+  return res.json();
 }
 
+export async function createStory(data: Omit<Story, 'id' | 'chapters'>): Promise<Story> {
+  const res = await fetch('/api/stories', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Failed to create story');
+  return res.json();
+}
+
+export async function updateStory(slug: string, data: Partial<Omit<Story, 'id' | 'slug' | 'chapters'>>): Promise<Story> {
+  const res = await fetch(`/api/stories/${slug}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Failed to update story');
+  return res.json();
+}
+
+export async function deleteStory(slug: string): Promise<void> {
+  const res = await fetch(`/api/stories/${slug}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('Failed to delete story');
+}
+
+export async function migrateStoryAuthors(_defaultUsername: string): Promise<Story[]> {
+  return getStories();
+}
+
+// ── Chapter content ───────────────────────────────────────────────────────────
+
 export async function getChapterContent(blobPath: string): Promise<string> {
-  if (blobPath.startsWith('mock://')) {
-    return mockContent.get(blobPath.slice('mock://'.length)) ?? '';
-  }
   const res = await fetch(blobPath);
   if (!res.ok) throw new Error(`Failed to load chapter: ${res.status}`);
   return res.text();
 }
 
-// ── Bookmarks ────────────────────────────────────────────────────────────────────
+// ── Chapters ──────────────────────────────────────────────────────────────────
+
+export async function createChapter(
+  storySlug: string,
+  data: { title: string; order: number },
+  content: string,
+): Promise<Chapter> {
+  const story = await getStory(storySlug);
+  if (!story) throw new Error('Story not found');
+  const id = `ch-${Date.now()}`;
+  const blobPath = `/api/chapters/${id}/content`;
+
+  const contentRes = await fetch(blobPath, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    body: content,
+  });
+  if (!contentRes.ok) throw new Error('Failed to upload chapter content');
+
+  const chapter: Omit<Chapter, 'id'> & { id: string } = {
+    id,
+    storyId: story.id,
+    title: data.title,
+    order: data.order,
+    blobPath,
+  };
+
+  const metaRes = await fetch(`/api/stories/${storySlug}/chapters`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(chapter),
+  });
+  if (!metaRes.ok) throw new Error('Failed to save chapter metadata');
+  return metaRes.json();
+}
+
+export async function updateChapter(
+  storySlug: string,
+  chapterId: string,
+  data: { title: string },
+  content: string,
+): Promise<Chapter> {
+  const blobPath = `/api/chapters/${chapterId}/content`;
+  const contentRes = await fetch(blobPath, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    body: content,
+  });
+  if (!contentRes.ok) throw new Error('Failed to upload chapter content');
+
+  const metaRes = await fetch(`/api/stories/${storySlug}/chapters/${chapterId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title: data.title, blobPath }),
+  });
+  if (!metaRes.ok) throw new Error('Failed to update chapter metadata');
+  return metaRes.json();
+}
+
+export async function deleteChapter(storySlug: string, chapterId: string): Promise<void> {
+  const res = await fetch(`/api/stories/${storySlug}/chapters/${chapterId}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('Failed to delete chapter');
+}
+
+export async function reorderChapters(storySlug: string, orderedIds: string[]): Promise<void> {
+  const res = await fetch(`/api/stories/${storySlug}/chapters/order`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ orderedIds }),
+  });
+  if (!res.ok) throw new Error('Failed to reorder chapters');
+}
+
+// ── Bookmarks ─────────────────────────────────────────────────────────────────
 
 const BOOKMARK_EVENTS_KEY = 'st-story-bookmarks';
 
@@ -223,6 +250,7 @@ function saveBookmarks(events: Bookmark[]): void {
     localStorage.setItem(BOOKMARK_EVENTS_KEY, JSON.stringify(events));
   } catch {}
 }
+
 export async function placeBookmark(
   chapter: Pick<Chapter, 'id' | 'storyId' | 'order'>,
   storySlug: string,
@@ -264,107 +292,7 @@ export async function removeBookmark(chapterId: string): Promise<void> {
   saveBookmarks(loadBookmarks().filter((e) => e.chapterId !== chapterId));
 }
 
-// ── Stories ─────────────────────────────────────────────────────────────────
-
-export async function createStory(data: Omit<Story, 'id' | 'chapters'>): Promise<Story> {
-  const story: Story = { ...data, id: crypto.randomUUID(), chapters: [] };
-  stories = [...stories, story];
-  saveStories(stories);
-  return story;
-}
-
-export async function updateStory(slug: string, data: Partial<Omit<Story, 'id' | 'slug' | 'chapters'>>): Promise<Story> {
-  stories = stories.map((s) => (s.slug === slug ? { ...s, ...data } : s));
-  saveStories(stories);
-  return stories.find((s) => s.slug === slug)!;
-}
-
-export async function deleteStory(slug: string): Promise<void> {
-  stories = stories.filter((s) => s.slug !== slug);
-  saveStories(stories);
-}
-
-// ── Chapters ─────────────────────────────────────────────────────────────────
-
-export async function createChapter(
-  storySlug: string,
-  data: { title: string; order: number },
-  content: string,
-): Promise<Chapter> {
-  const story = stories.find((s) => s.slug === storySlug);
-  if (!story) throw new Error('Story not found');
-  const id = `ch-${Date.now()}`;
-
-  const res = await fetch(`/api/chapters/${id}/content`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-    body: content,
-  });
-  if (!res.ok) throw new Error('Failed to upload chapter content');
-
-  const chapter: Chapter = {
-    id,
-    storyId: story.id,
-    title: data.title,
-    order: data.order,
-    blobPath: `/api/chapters/${id}/content`,
-  };
-  stories = stories.map((s) =>
-    s.slug === storySlug ? { ...s, chapters: [...s.chapters, chapter] } : s,
-  );
-  saveStories(stories);
-  return chapter;
-}
-
-export async function updateChapter(
-  storySlug: string,
-  chapterId: string,
-  data: { title: string },
-  content: string,
-): Promise<Chapter> {
-  const res = await fetch(`/api/chapters/${chapterId}/content`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-    body: content,
-  });
-  if (!res.ok) throw new Error('Failed to upload chapter content');
-
-  stories = stories.map((s) => {
-    if (s.slug !== storySlug) return s;
-    return {
-      ...s,
-      chapters: s.chapters.map((c) =>
-        c.id === chapterId
-          ? { ...c, title: data.title, blobPath: `/api/chapters/${chapterId}/content` }
-          : c,
-      ),
-    };
-  });
-  saveStories(stories);
-  return stories.find((s) => s.slug === storySlug)!.chapters.find((c) => c.id === chapterId)!;
-}
-
-export async function deleteChapter(storySlug: string, chapterId: string): Promise<void> {
-  stories = stories.map((s) => {
-    if (s.slug !== storySlug) return s;
-    return { ...s, chapters: s.chapters.filter((c) => c.id !== chapterId) };
-  });
-  saveStories(stories);
-}
-
-export async function reorderChapters(storySlug: string, orderedIds: string[]): Promise<void> {
-  stories = stories.map((s) => {
-    if (s.slug !== storySlug) return s;
-    const reordered = orderedIds.map((id, index) => ({
-      ...s.chapters.find((c) => c.id === id)!,
-      order: index + 1,
-    }));
-    return { ...s, chapters: reordered };
-  });
-  saveStories(stories);
-}
-
-// ── Reading history ──────────────────────────────────────────────────────────
+// ── Reading history ───────────────────────────────────────────────────────────
 
 const READING_EVENTS_KEY = 'st-reading-events';
 
