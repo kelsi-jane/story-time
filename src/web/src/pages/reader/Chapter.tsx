@@ -33,6 +33,10 @@ export default function Chapter() {
   });
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [chapterId]);
+
+  useEffect(() => {
     if (!slug || !chapterId) return;
     setLoading(true);
     setContent(null);
@@ -72,8 +76,9 @@ export default function Chapter() {
   const swipeHandlers = useSwipeable({
     onSwipedLeft:  () => next && navigate(`/stories/${slug}/chapters/${next.id}`, { state: { from: 'right' } }),
     onSwipedRight: () => prev && navigate(`/stories/${slug}/chapters/${prev.id}`, { state: { from: 'left' } }),
-    preventScrollOnSwipe: true,
+    preventScrollOnSwipe: false,
     trackMouse: true,
+    delta: 60,
   });
 
   if (loading) return (
