@@ -20,6 +20,7 @@ export interface Block {
   color: BlockColor;
   slot: string;
   tags: string[];
+  notes?: string;
   status: BlockStatus;
   createdAt: string;
   updatedAt: string;
@@ -52,7 +53,11 @@ export type WritingEvent =
   | { type: 'ProjectCreated'; payload: { title: string; authorUsername: string; templateId: string } }
   | { type: 'SlotAdded'; payload: { slotId: string; label: string; area: SlotArea; order: number } }
   | { type: 'BlockCreated'; payload: { blockId: string; title: string; color: BlockColor; slot: string } }
-  | { type: 'BlockMoved'; payload: { blockId: string; fromSlot: string; toSlot: string } };
+  | { type: 'BlockMoved'; payload: { blockId: string; fromSlot: string; toSlot: string } }
+  | { type: 'BlockAssigned'; payload: { blockId: string; fromSlot: string; toSlot: string } }
+  | { type: 'BlockUnassigned'; payload: { blockId: string; fromSlot: string; toSlot: string } }
+  | { type: 'BlockStatusChanged'; payload: { blockId: string; status: BlockStatus } }
+  | { type: 'BlockUpdated'; payload: { blockId: string; title?: string; notes?: string; tags?: string[] } };
 
 export type PersistedEvent = WritingEvent & {
   id: string;
@@ -166,10 +171,34 @@ function projectEvents(events: PersistedEvent[]): Projection {
         meta.updatedAt = ev.timestamp;
         break;
 
-      case 'BlockMoved': {
+      case 'BlockMoved':
+      case 'BlockAssigned':
+      case 'BlockUnassigned': {
         const block = blocks.find(b => b.id === ev.payload.blockId);
         if (block) {
           block.slot = ev.payload.toSlot;
+          block.updatedAt = ev.timestamp;
+        }
+        meta.updatedAt = ev.timestamp;
+        break;
+      }
+
+      case 'BlockStatusChanged': {
+        const block = blocks.find(b => b.id === ev.payload.blockId);
+        if (block) {
+          block.status = ev.payload.status;
+          block.updatedAt = ev.timestamp;
+        }
+        meta.updatedAt = ev.timestamp;
+        break;
+      }
+
+      case 'BlockUpdated': {
+        const block = blocks.find(b => b.id === ev.payload.blockId);
+        if (block) {
+          if (ev.payload.title !== undefined) block.title = ev.payload.title;
+          if (ev.payload.notes !== undefined) block.notes = ev.payload.notes;
+          if (ev.payload.tags !== undefined) block.tags = ev.payload.tags;
           block.updatedAt = ev.timestamp;
         }
         meta.updatedAt = ev.timestamp;

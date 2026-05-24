@@ -11,6 +11,7 @@ import Admins from './pages/admin/Admins';
 import Settings from './pages/reader/Settings';
 import AuthorIndex from './pages/author/Index';
 import Project from './pages/author/Project';
+import BlockDetail from './pages/author/BlockDetail';
 
 export const router = createBrowserRouter([
   { path: '/', element: <Discovery /> },
@@ -26,4 +27,5 @@ export const router = createBrowserRouter([
   { path: '/settings', element: <Settings /> },
   { path: '/author', element: <AuthorIndex /> },
   { path: '/author/projects/:projectId', element: <Project /> },
+  { path: '/author/projects/:projectId/blocks/:blockId', element: <BlockDetail /> },
 ]);
