@@ -9,6 +9,8 @@ import StoryEdit from './pages/admin/StoryEdit';
 import ChapterNew from './pages/admin/ChapterNew';
 import Admins from './pages/admin/Admins';
 import Settings from './pages/reader/Settings';
+import AuthorIndex from './pages/author/Index';
+import Project from './pages/author/Project';
 
 export const router = createBrowserRouter([
   { path: '/', element: <Discovery /> },
@@ -22,4 +24,6 @@ export const router = createBrowserRouter([
   { path: '/admin/stories/:slug/chapters/new', element: <ChapterNew /> },
   { path: '/admin/stories/:slug/chapters/:chapterId/edit', element: <ChapterNew /> },
   { path: '/settings', element: <Settings /> },
+  { path: '/author', element: <AuthorIndex /> },
+  { path: '/author/projects/:projectId', element: <Project /> },
 ]);
