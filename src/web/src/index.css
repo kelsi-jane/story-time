@@ -1021,6 +1021,16 @@ textarea.input {
   min-height: 60px;
 }
 
+.board-zone.drag-over {
+  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 6%, var(--color-surface));
+}
+
+.board-zone.drag-over .board-zone-empty {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
 /* Inline block create form */
 .board-zone-create {
   width: 100%;
@@ -1082,6 +1092,14 @@ textarea.input {
   justify-content: space-between;
   flex-shrink: 0;
   transition: transform 0.1s;
+  overflow: hidden;
+}
+
+.sticky > span:first-child {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .sticky:hover {

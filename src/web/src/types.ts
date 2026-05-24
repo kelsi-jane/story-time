@@ -107,7 +107,8 @@ export interface ProjectListItem {
 export type WritingEvent =
   | { type: 'ProjectCreated'; payload: { title: string; authorUsername: string; templateId: string } }
   | { type: 'SlotAdded'; payload: { slotId: string; label: string; area: SlotArea; order: number } }
-  | { type: 'BlockCreated'; payload: { blockId: string; title: string; color: BlockColor; slot: string } };
+  | { type: 'BlockCreated'; payload: { blockId: string; title: string; color: BlockColor; slot: string } }
+  | { type: 'BlockMoved'; payload: { blockId: string; fromSlot: string; toSlot: string } };
 
 export type PersistedEvent = WritingEvent & {
   id: string;

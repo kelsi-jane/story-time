@@ -1,0 +1,12 @@
+[
+    { "name": "competence", "example": "I can handle things when they go wrong" },
+    { "name": "resilience", "example": "I can bounce back from setbacks" },
+    { "name": "problem_solving", "example": "I can find creative solutions to challenges" },
+    { "name": "self_efficacy", "example": "I believe in my ability to achieve goals" },
+    { "name": "adaptability", "example": "I can adjust to new situations and changes" },
+    { "name": "emotional_regulation", "example": "I can manage my emotions effectively" },
+    { "name": "self_confidence", "example": "I have confidence in myself and my abilities" },
+    { "name": "optimism", "example": "I maintain a positive outlook even in difficult times" },
+    { "name": "self_compassion", "example": "I treat myself with kindness and understanding" },
+    { "name": "mindfulness", "example": "I stay present and focused in the moment" }
+]
