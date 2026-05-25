@@ -1112,6 +1112,40 @@ textarea.input {
 .sticky-purple { background: #CECBF6; color: #26215C; }
 .sticky-blue   { background: #B5D4F4; color: #042C53; }
 
+.sticky-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sticky-pin {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: 11px;
+  opacity: 0;
+  color: inherit;
+  line-height: 1;
+  transition: opacity 0.15s;
+}
+
+.sticky:hover .sticky-pin {
+  opacity: 0.4;
+}
+
+.sticky-pin:hover {
+  opacity: 0.8 !important;
+}
+
+.sticky-pin.pinned {
+  opacity: 0.7 !important;
+}
+
+.sticky-pin.pinned:hover {
+  opacity: 1 !important;
+}
+
 .sticky-tag {
   font-size: 9px;
   font-weight: 500;
@@ -1407,6 +1441,33 @@ textarea.input {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.block-detail-pin-btn {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 3px 7px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  opacity: 0.5;
+  line-height: 1;
+}
+
+.block-detail-pin-btn:hover {
+  opacity: 1;
+  border-color: var(--color-text-secondary);
+}
+
+.block-detail-pin-btn.pinned {
+  opacity: 1;
+  color: var(--color-text-primary);
+  border-color: var(--color-text-primary);
+}
+
+.block-detail-assigned-chip.pinned-ref {
+  opacity: 0.85;
 }
 
 .block-detail-assign-wrap {

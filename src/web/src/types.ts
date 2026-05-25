@@ -77,6 +77,7 @@ export interface Block {
   slot: string;
   tags: string[];
   notes?: string;
+  pinned: boolean;
   status: BlockStatus;
   createdAt: string;
   updatedAt: string;
@@ -91,10 +92,16 @@ export interface ProjectMeta {
   updatedAt: string;
 }
 
+export interface OutlineAssignment {
+  blockId: string;
+  slotId: string;
+}
+
 export interface Projection {
   meta: ProjectMeta;
   slots: Slot[];
   blocks: Block[];
+  outlineAssignments: OutlineAssignment[];
   eventCount: number;
 }
 
@@ -110,8 +117,10 @@ export type WritingEvent =
   | { type: 'SlotAdded'; payload: { slotId: string; label: string; area: SlotArea; order: number } }
   | { type: 'BlockCreated'; payload: { blockId: string; title: string; color: BlockColor; slot: string } }
   | { type: 'BlockMoved'; payload: { blockId: string; fromSlot: string; toSlot: string } }
-  | { type: 'BlockAssigned'; payload: { blockId: string; fromSlot: string; toSlot: string } }
+  | { type: 'BlockAssigned'; payload: { blockId: string; fromSlot: string; toSlot: string; referenced?: boolean } }
   | { type: 'BlockUnassigned'; payload: { blockId: string; fromSlot: string; toSlot: string } }
+  | { type: 'BlockPinned'; payload: { blockId: string } }
+  | { type: 'BlockUnpinned'; payload: { blockId: string } }
   | { type: 'BlockStatusChanged'; payload: { blockId: string; status: BlockStatus } }
   | { type: 'BlockUpdated'; payload: { blockId: string; title?: string; notes?: string; tags?: string[] } };
 

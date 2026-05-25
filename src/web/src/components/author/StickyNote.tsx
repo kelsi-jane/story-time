@@ -5,9 +5,10 @@ interface Props {
   block: Block;
   onDragStart: (blockId: string) => void;
   onClick: (blockId: string) => void;
+  onPinToggle: (blockId: string) => void;
 }
 
-export default function StickyNote({ block, onDragStart, onClick }: Props) {
+export default function StickyNote({ block, onDragStart, onClick, onPinToggle }: Props) {
   const dragged = useRef(false);
 
   return (
@@ -24,9 +25,18 @@ export default function StickyNote({ block, onDragStart, onClick }: Props) {
       onClick={() => { if (!dragged.current) onClick(block.id); }}
     >
       <span>{block.title}</span>
-      {block.tags.length > 0 && (
-        <span className="sticky-tag">{block.tags[0]}</span>
-      )}
+      <div className="sticky-footer">
+        {block.tags.length > 0 && (
+          <span className="sticky-tag">{block.tags[0]}</span>
+        )}
+        <button
+          className={`sticky-pin${block.pinned ? ' pinned' : ''}`}
+          title={block.pinned ? 'Pinned — stays on board when assigned to outline' : 'Pin to keep on board when assigned to outline'}
+          onClick={e => { e.stopPropagation(); onPinToggle(block.id); }}
+        >
+          <i className="ti ti-pin" />
+        </button>
+      </div>
     </div>
   );
 }

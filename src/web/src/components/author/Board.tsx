@@ -35,6 +35,7 @@ interface Props {
   onBlockCreated: (slotId: string, title: string, color: BlockColor) => void;
   onBlockMoved: (blockId: string, fromSlot: string, toSlot: string) => void;
   onBlockClick: (blockId: string) => void;
+  onBlockPinToggled: (blockId: string) => void;
 }
 
 interface CreateState {
@@ -43,7 +44,7 @@ interface CreateState {
   color: BlockColor;
 }
 
-export default function Board({ slots, blocks, onBlockCreated, onBlockMoved, onBlockClick }: Props) {
+export default function Board({ slots, blocks, onBlockCreated, onBlockMoved, onBlockClick, onBlockPinToggled }: Props) {
   const [creating, setCreating] = useState<CreateState | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
@@ -112,6 +113,7 @@ export default function Board({ slots, blocks, onBlockCreated, onBlockMoved, onB
                       block={b}
                       onDragStart={setDraggingId}
                       onClick={onBlockClick}
+                      onPinToggle={onBlockPinToggled}
                     />
                   ))}
                 </div>

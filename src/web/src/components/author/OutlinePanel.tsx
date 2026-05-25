@@ -1,13 +1,14 @@
 import { useState } from 'react';
-import type { Block, Slot } from '../../types';
+import type { Block, OutlineAssignment, Slot } from '../../types';
 
 interface Props {
   slots: Slot[];
   blocks: Block[];
+  outlineAssignments: OutlineAssignment[];
   onBlockAssigned: (blockId: string, fromSlot: string, toSlot: string) => void;
 }
 
-export default function OutlinePanel({ slots, blocks, onBlockAssigned }: Props) {
+export default function OutlinePanel({ slots, blocks, outlineAssignments, onBlockAssigned }: Props) {
   const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
 
   const outlineSlots = slots.filter(s => s.area === 'outline' && !s.hidden);
@@ -29,7 +30,12 @@ export default function OutlinePanel({ slots, blocks, onBlockAssigned }: Props) 
       </div>
       <div className="outline-panel-body">
         {outlineSlots.map(slot => {
-          const assigned = blocks.filter(b => b.slot === slot.id && b.status === 'active');
+          const moved = blocks.filter(b => b.slot === slot.id && b.status === 'active');
+          const referenced = outlineAssignments
+            .filter(a => a.slotId === slot.id)
+            .map(a => blocks.find(b => b.id === a.blockId))
+            .filter((b): b is Block => !!b && b.status === 'active');
+          const assigned = [...moved, ...referenced];
           const colorClass = `outline-slot-color-${slot.order % 6}`;
           const isDragOver = dragOverSlot === slot.id;
 
@@ -56,7 +62,7 @@ export default function OutlinePanel({ slots, blocks, onBlockAssigned }: Props) 
               ) : (
                 assigned.map(b => (
                   <div key={b.id} className="outline-slot-item">
-                    <i className="ti ti-note" />
+                    <i className={b.pinned ? 'ti ti-pin' : 'ti ti-note'} />
                     {b.title}
                   </div>
                 ))
