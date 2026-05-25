@@ -39,6 +39,15 @@ export default function Project() {
     await loadProjection();
   }
 
+  async function handleBlockMoved(blockId: string, fromSlot: string, toSlot: string) {
+    if (!projectId) return;
+    await appendEvent(projectId, {
+      type: 'BlockMoved',
+      payload: { blockId, fromSlot, toSlot },
+    });
+    await loadProjection();
+  }
+
   if (loading) {
     return (
       <AuthorLayout>
@@ -84,6 +93,7 @@ export default function Project() {
           slots={projection.slots}
           blocks={boardBlocks}
           onBlockCreated={handleBlockCreated}
+          onBlockMoved={handleBlockMoved}
         />
       </div>
 

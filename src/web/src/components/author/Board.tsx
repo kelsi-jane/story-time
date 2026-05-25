@@ -8,7 +8,6 @@ interface Zone {
   wide?: boolean;
 }
 
-// Fixed zone layout matching the wireframe
 const ZONE_ROWS: Zone[][] = [
   [
     { slotId: 'loose-ideas',  icon: 'ti-bulb', wide: true },
@@ -34,6 +33,7 @@ interface Props {
   slots: Slot[];
   blocks: Block[];
   onBlockCreated: (slotId: string, title: string, color: BlockColor) => void;
+  onBlockMoved: (blockId: string, fromSlot: string, toSlot: string) => void;
 }
 
 interface CreateState {
@@ -42,8 +42,10 @@ interface CreateState {
   color: BlockColor;
 }
 
-export default function Board({ slots, blocks, onBlockCreated }: Props) {
+export default function Board({ slots, blocks, onBlockCreated, onBlockMoved }: Props) {
   const [creating, setCreating] = useState<CreateState | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
 
   function startCreate(slotId: string) {
     setCreating({ slotId, title: '', color: 'amber' });
@@ -55,12 +57,23 @@ export default function Board({ slots, blocks, onBlockCreated }: Props) {
     setCreating(null);
   }
 
+  function handleDrop(e: React.DragEvent, toSlotId: string) {
+    e.preventDefault();
+    setDragOverSlot(null);
+    const blockId = e.dataTransfer.getData('text/plain');
+    if (!blockId) return;
+    const block = blocks.find(b => b.id === blockId);
+    if (!block || block.slot === toSlotId) return;
+    onBlockMoved(blockId, block.slot, toSlotId);
+    setDraggingId(null);
+  }
+
   function slotForId(id: string): Slot | undefined {
     return slots.find(s => s.id === id);
   }
 
   return (
-    <div className="board-canvas">
+    <div className="board-canvas" onDragEnd={() => { setDraggingId(null); setDragOverSlot(null); }}>
       {ZONE_ROWS.map((row, ri) => (
         <div key={ri} className="board-zone-row">
           {row.map(zone => {
@@ -68,9 +81,20 @@ export default function Board({ slots, blocks, onBlockCreated }: Props) {
             if (!slot) return null;
             const zoneBlocks = blocks.filter(b => b.slot === zone.slotId && b.status === 'active');
             const isCreating = creating?.slotId === zone.slotId;
+            const isDragOver = dragOverSlot === zone.slotId;
 
             return (
-              <div key={zone.slotId} className={`board-zone${zone.wide ? ' wide' : ''}`}>
+              <div
+                key={zone.slotId}
+                className={`board-zone${zone.wide ? ' wide' : ''}${isDragOver ? ' drag-over' : ''}`}
+                onDragOver={e => { e.preventDefault(); setDragOverSlot(zone.slotId); }}
+                onDragLeave={e => {
+                  if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                    setDragOverSlot(null);
+                  }
+                }}
+                onDrop={e => handleDrop(e, zone.slotId)}
+              >
                 <div className="board-zone-header">
                   <i className={`ti ${zone.icon}`} />
                   <span className="board-zone-label">{slot.label}</span>
@@ -81,7 +105,13 @@ export default function Board({ slots, blocks, onBlockCreated }: Props) {
                 </div>
 
                 <div className="board-zone-cards">
-                  {zoneBlocks.map(b => <StickyNote key={b.id} block={b} />)}
+                  {zoneBlocks.map(b => (
+                    <StickyNote
+                      key={b.id}
+                      block={b}
+                      onDragStart={setDraggingId}
+                    />
+                  ))}
                 </div>
 
                 {isCreating && (
@@ -114,7 +144,9 @@ export default function Board({ slots, blocks, onBlockCreated }: Props) {
                 )}
 
                 {zoneBlocks.length === 0 && !isCreating && (
-                  <div className="board-zone-empty">drop ideas here</div>
+                  <div className="board-zone-empty">
+                    {isDragOver ? 'drop here' : 'drop ideas here'}
+                  </div>
                 )}
               </div>
             );

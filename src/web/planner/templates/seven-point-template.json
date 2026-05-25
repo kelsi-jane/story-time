@@ -1,0 +1,57 @@
+{
+    "_sources": ["https://www.google.com/search?q=7+part+story+structure&oq=7+part+story+structure&gs_lcrp=EgZjaHJvbWUqBwgAEAAYgAQyBwgAEAAYgAQyDQgBEAAYhgMYgAQYigUyBwgCEAAY7wUyBwgDEAAY7wUyBwgEEAAY7wUyBwgFEAAY7wXSAQgzODA3ajBqN6gCCLACAfEFLK8YfL18UFA&sourceid=chrome&ie=UTF-8&zx=1779518473730#fpstate=ive&vld=cid:9272293c,vid:zUH0mWvGsIo,st:0"],
+    "_example": {
+        "hook": "The story begins with a hook that grabs the reader's attention and introduces the main character and setting.",
+        "plot_turn_1": "The first plot turn introduces the main conflict or problem that the protagonist must face.",
+        "pinch_point_1": "The first pinch point is a moment of tension or crisis that reminds the reader of the stakes and raises the tension.",
+        "midpoint": "The midpoint is a significant turning point in the story where the protagonist makes a major decision or experiences a major event that changes the direction of the story.",
+        "pinch_point_2": "The second pinch point is another moment of tension or crisis that further raises the stakes and keeps the reader engaged.",
+        "plot_turn_2": "The second plot turn is another major turning point that leads to the climax of the story.",
+        "resolution": "The resolution is the final part of the story where the conflict is resolved and loose ends are tied up."
+    },
+    "summary": "",
+    "stages": [
+        {
+            "name": "hook",
+            "priority": 2, 
+            "body": "", 
+            "verified": false
+        },
+        {
+            "name": "plot_turn_1",
+            "priority": 4, 
+            "body": "", 
+            "verified": false
+        },
+        {
+            "name": "pinch_point_1",
+            "priority": 5, 
+            "body": "", 
+            "verified": false
+        },
+        {
+            "name": "midpoint",
+            "priority": 3, 
+            "body": "", 
+            "verified": false
+        },
+        {
+            "name": "pinch_point_2",
+            "priority": 6, 
+            "body": "", 
+            "verified": false
+        },
+        {
+            "name": "plot_turn_2",
+            "priority": 7, 
+            "body": "", 
+            "verified": false
+        },
+        {
+            "name": "resolution",
+            "priority": 1, 
+            "body": "", 
+            "verified": false
+        }
+    ]
+}
