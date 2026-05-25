@@ -918,6 +918,12 @@ textarea.input {
   background: var(--color-background);
 }
 
+.board-toolbar-btn.active {
+  color: var(--color-text-primary);
+  font-weight: 500;
+  border-color: var(--color-text-secondary);
+}
+
 .board-toolbar-btn i {
   font-size: 13px;
 }
@@ -1144,6 +1150,21 @@ textarea.input {
 
 .sticky-pin.pinned:hover {
   opacity: 1 !important;
+}
+
+.sticky-archived {
+  opacity: 0.38;
+  filter: grayscale(0.5);
+  cursor: default;
+}
+
+.sticky-archived-badge {
+  font-family: 'Inter', sans-serif;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  opacity: 0.6;
 }
 
 .sticky-tag {
