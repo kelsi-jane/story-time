@@ -55,3 +55,64 @@ export interface Bookmark {
   chapterOrder: number;
   occurredAt: string;
 }
+
+// ── Writing tools ─────────────────────────────────────────────────────────────
+
+export type BlockColor = 'amber' | 'teal' | 'coral' | 'purple' | 'blue';
+export type BlockStatus = 'active' | 'hidden' | 'parked' | 'archived';
+export type SlotArea = 'board' | 'outline';
+
+export interface Slot {
+  id: string;
+  label: string;
+  area: SlotArea;
+  order: number;
+  hidden: boolean;
+}
+
+export interface Block {
+  id: string;
+  title: string;
+  color: BlockColor;
+  slot: string;
+  tags: string[];
+  status: BlockStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProjectMeta {
+  projectId: string;
+  title: string;
+  authorUsername: string;
+  templateId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Projection {
+  meta: ProjectMeta;
+  slots: Slot[];
+  blocks: Block[];
+  eventCount: number;
+}
+
+export interface ProjectListItem {
+  projectId: string;
+  title: string;
+  createdAt: string;
+  blockCount: number;
+}
+
+export type WritingEvent =
+  | { type: 'ProjectCreated'; payload: { title: string; authorUsername: string; templateId: string } }
+  | { type: 'SlotAdded'; payload: { slotId: string; label: string; area: SlotArea; order: number } }
+  | { type: 'BlockCreated'; payload: { blockId: string; title: string; color: BlockColor; slot: string } };
+
+export type PersistedEvent = WritingEvent & {
+  id: string;
+  projectId: string;
+  timestamp: string;
+  userId: string;
+  note?: string;
+};
