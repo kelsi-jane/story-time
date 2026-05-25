@@ -44,7 +44,6 @@ interface CreateState {
 
 export default function Board({ slots, blocks, showArchived, layout, onBlockCreated, onBlockMoved, onBlockClick, onBlockPinToggled, onSlotReordered }: Props) {
   const [creating, setCreating] = useState<CreateState | null>(null);
-  const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
   const [draggingZoneId, setDraggingZoneId] = useState<string | null>(null);
   const [dragOverZoneId, setDragOverZoneId] = useState<string | null>(null);
@@ -78,7 +77,6 @@ export default function Board({ slots, blocks, showArchived, layout, onBlockCrea
     const block = blocks.find(b => b.id === blockId);
     if (!block || block.slot === toSlotId) return;
     onBlockMoved(blockId, block.slot, toSlotId);
-    setDraggingId(null);
   }
 
   function slotForId(id: string): Slot | undefined {
@@ -94,7 +92,7 @@ export default function Board({ slots, blocks, showArchived, layout, onBlockCrea
   return (
     <div
       className={`board-canvas board-canvas-${layout}`}
-      onDragEnd={() => { setDraggingId(null); setDragOverSlot(null); setDraggingZoneId(null); setDragOverZoneId(null); }}
+      onDragEnd={() => { setDragOverSlot(null); setDraggingZoneId(null); setDragOverZoneId(null); }}
     >
       {orderedZones.map(zone => {
         const slot = slotForId(zone.slotId);
@@ -142,7 +140,7 @@ export default function Board({ slots, blocks, showArchived, layout, onBlockCrea
                 <StickyNote
                   key={b.id}
                   block={b}
-                  onDragStart={setDraggingId}
+                  onDragStart={() => {}}
                   onClick={onBlockClick}
                   onPinToggle={onBlockPinToggled}
                 />
