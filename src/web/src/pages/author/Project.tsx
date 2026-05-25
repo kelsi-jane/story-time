@@ -15,6 +15,17 @@ export default function Project() {
   const [projection, setProjection] = useState<Projection | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showArchived, setShowArchived] = useState(() =>
+    localStorage.getItem(`show-archived-${projectId}`) === 'true'
+  );
+
+  function toggleShowArchived() {
+    setShowArchived(prev => {
+      const next = !prev;
+      localStorage.setItem(`show-archived-${projectId}`, String(next));
+      return next;
+    });
+  }
 
   const loadProjection = useCallback(async () => {
     if (!projectId) return;
@@ -87,7 +98,7 @@ export default function Project() {
   }
 
   const activeBlocks = projection.blocks.filter((b: Block) => b.status !== 'archived');
-  const boardBlocks = activeBlocks.filter((b: Block) => {
+  const boardBlocks = projection.blocks.filter((b: Block) => {
     const slot = projection.slots.find(s => s.id === b.slot);
     return slot?.area === 'board' || !slot;
   });
@@ -103,6 +114,14 @@ export default function Project() {
             <i className="ti ti-filter" /> filter
           </button>
           <div className="board-toolbar-divider" />
+          <button
+            className={`board-toolbar-btn${showArchived ? ' active' : ''}`}
+            onClick={toggleShowArchived}
+            title={showArchived ? 'Hide archived blocks' : 'Show archived blocks'}
+          >
+            <i className="ti ti-archive" /> archived
+          </button>
+          <div className="board-toolbar-divider" />
           <button className="board-toolbar-btn" disabled>
             <i className="ti ti-link" /> link
           </button>
@@ -114,6 +133,7 @@ export default function Project() {
         <Board
           slots={projection.slots}
           blocks={boardBlocks}
+          showArchived={showArchived}
           onBlockCreated={handleBlockCreated}
           onBlockMoved={handleBlockMoved}
           onBlockClick={(blockId) => navigate(`/author/projects/${projectId}/blocks/${blockId}`)}

@@ -32,6 +32,7 @@ const COLOR_HEX: Record<BlockColor, string> = {
 interface Props {
   slots: Slot[];
   blocks: Block[];
+  showArchived: boolean;
   onBlockCreated: (slotId: string, title: string, color: BlockColor) => void;
   onBlockMoved: (blockId: string, fromSlot: string, toSlot: string) => void;
   onBlockClick: (blockId: string) => void;
@@ -44,7 +45,7 @@ interface CreateState {
   color: BlockColor;
 }
 
-export default function Board({ slots, blocks, onBlockCreated, onBlockMoved, onBlockClick, onBlockPinToggled }: Props) {
+export default function Board({ slots, blocks, showArchived, onBlockCreated, onBlockMoved, onBlockClick, onBlockPinToggled }: Props) {
   const [creating, setCreating] = useState<CreateState | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
@@ -81,7 +82,9 @@ export default function Board({ slots, blocks, onBlockCreated, onBlockMoved, onB
           {row.map(zone => {
             const slot = slotForId(zone.slotId);
             if (!slot) return null;
-            const zoneBlocks = blocks.filter(b => b.slot === zone.slotId && b.status === 'active');
+            const zoneBlocks = blocks.filter(b =>
+              b.slot === zone.slotId && (b.status === 'active' || (showArchived && b.status === 'archived'))
+            );
             const isCreating = creating?.slotId === zone.slotId;
             const isDragOver = dragOverSlot === zone.slotId;
 
