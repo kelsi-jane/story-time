@@ -91,16 +91,34 @@ export default function Chapter() {
     </div>
   );
 
-  if (error || !story || !chapter || content === null) return (
-    <div style={styles.outer}>
-      <div style={styles.inner}>
-        <div className="page-card" style={styles.loadingCard}>
-          <p style={styles.errorText}>{error ?? 'Something went wrong.'}</p>
-          <Link to={`/stories/${slug}`} style={styles.navLink}>← Back to story</Link>
+  if (error || !story || !chapter || content === null) {
+    const isChapterNotFound = error?.includes("chapter couldn't be found");
+    const isStoryNotFound = !story || error?.includes("story couldn't be found");
+    const isNotFound = isChapterNotFound || isStoryNotFound;
+    const label = isChapterNotFound ? 'chapter not found' : isStoryNotFound ? 'story not found' : 'something went wrong';
+    const heading = isChapterNotFound ? 'This chapter is missing.' : isStoryNotFound ? "This story's gone quiet." : "This chapter wouldn't open.";
+    const body = isChapterNotFound
+      ? "We couldn't find this chapter. It may have been removed or the link is wrong."
+      : isStoryNotFound
+      ? "We couldn't find this story. The link may be wrong, or it may have moved."
+      : "Something interrupted us. Give it a moment and try again.";
+    return (
+      <div className="error-page">
+        <div className="error-card">
+          <i className={`ti ${isNotFound ? 'ti-book-off' : 'ti-alert-triangle'} error-icon`} />
+          <p className="error-label">{label}</p>
+          <h1 className="admin-page-heading">{heading}</h1>
+          <p className="error-body">{body}</p>
+          {isNotFound
+            ? <Link to={isChapterNotFound ? `/stories/${slug}` : '/'} className="btn btn-secondary error-cta">
+                {isChapterNotFound ? '← back to story' : '← back to stories'}
+              </Link>
+            : <button className="btn btn-secondary error-cta" onClick={() => window.location.reload()}>try again</button>
+          }
         </div>
       </div>
-    </div>
-  );
+    );
+  }
 
   return (
     <div style={styles.outer}>

@@ -130,7 +130,13 @@ export default function BlockDetail() {
   if (!block) {
     return (
       <div className="block-detail-shell">
-        <p className="block-detail-loading">Block not found.</p>
+        <div className="content-missing">
+          <i className="ti ti-note-off content-missing-icon" />
+          <p className="content-missing-label">not found</p>
+          <p className="content-missing-heading">Block not found.</p>
+          <p className="content-missing-body">This block may have been deleted or the link is wrong.</p>
+          <Link to={`/author/projects/${projectId}`} className="btn btn-secondary content-missing-cta">← back to board</Link>
+        </div>
       </div>
     );
   }
