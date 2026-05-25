@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import AuthorLayout from '../../components/AuthorLayout';
 import ProjectSidebar from '../../components/author/ProjectSidebar';
@@ -10,6 +10,7 @@ import type { Block, BlockColor, Projection } from '../../types';
 
 export default function Project() {
   const { projectId } = useParams<{ projectId: string }>();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [projection, setProjection] = useState<Projection | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,6 +44,15 @@ export default function Project() {
     if (!projectId) return;
     await appendEvent(projectId, {
       type: 'BlockMoved',
+      payload: { blockId, fromSlot, toSlot },
+    });
+    await loadProjection();
+  }
+
+  async function handleBlockAssigned(blockId: string, fromSlot: string, toSlot: string) {
+    if (!projectId) return;
+    await appendEvent(projectId, {
+      type: 'BlockAssigned',
       payload: { blockId, fromSlot, toSlot },
     });
     await loadProjection();
@@ -94,10 +104,15 @@ export default function Project() {
           blocks={boardBlocks}
           onBlockCreated={handleBlockCreated}
           onBlockMoved={handleBlockMoved}
+          onBlockClick={(blockId) => navigate(`/author/projects/${projectId}/blocks/${blockId}`)}
         />
       </div>
 
-      <OutlinePanel slots={projection.slots} blocks={projection.blocks} />
+      <OutlinePanel
+        slots={projection.slots}
+        blocks={projection.blocks}
+        onBlockAssigned={handleBlockAssigned}
+      />
     </div>
   );
 }
