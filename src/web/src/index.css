@@ -991,18 +991,35 @@ textarea.input {
 }
 
 /* Board canvas */
-.board-canvas {
+.board-canvas-columns {
   flex: 1;
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 14px;
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.board-canvas-columns .board-zone {
+  width: 240px;
+  min-width: 240px;
+  flex-shrink: 0;
+}
+
+.board-canvas-rows {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding: 14px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
-.board-zone-row {
-  display: flex;
-  gap: 10px;
+.board-canvas-rows .board-zone {
+  width: 100%;
 }
 
 .board-zone {
@@ -1013,11 +1030,40 @@ textarea.input {
   display: flex;
   flex-direction: column;
   min-height: 150px;
-  flex: 1;
 }
 
-.board-zone.wide {
-  flex: 2.4;
+.board-layout-toggle {
+  display: flex;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.board-layout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 26px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  border: none;
+  cursor: pointer;
+}
+
+.board-layout-btn + .board-layout-btn {
+  border-left: 1px solid var(--color-border);
+}
+
+.board-layout-btn:hover {
+  background: var(--color-background);
+  color: var(--color-text-primary);
+}
+
+.board-layout-btn.active {
+  background: var(--color-background);
+  color: var(--color-text-primary);
 }
 
 .board-zone-header {
@@ -1025,11 +1071,28 @@ textarea.input {
   align-items: center;
   gap: 6px;
   margin-bottom: 8px;
+  cursor: grab;
+  user-select: none;
+}
+
+.board-zone-header:active {
+  cursor: grabbing;
 }
 
 .board-zone-header i {
   font-size: 14px;
   color: var(--color-text-secondary);
+}
+
+.board-zone-grip {
+  opacity: 0;
+  transition: opacity 0.1s;
+  font-size: 13px !important;
+  color: var(--color-text-tertiary) !important;
+}
+
+.board-zone:hover .board-zone-grip {
+  opacity: 1;
 }
 
 .board-zone-label {
@@ -1086,6 +1149,11 @@ textarea.input {
 .board-zone.drag-over {
   border-color: var(--color-accent);
   background: color-mix(in srgb, var(--color-accent) 6%, var(--color-surface));
+}
+
+.board-zone.zone-drag-over {
+  border-color: var(--color-text-secondary);
+  border-style: dashed;
 }
 
 .board-zone.drag-over .board-zone-empty {

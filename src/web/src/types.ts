@@ -122,7 +122,8 @@ export type WritingEvent =
   | { type: 'BlockPinned'; payload: { blockId: string } }
   | { type: 'BlockUnpinned'; payload: { blockId: string } }
   | { type: 'BlockStatusChanged'; payload: { blockId: string; status: BlockStatus } }
-  | { type: 'BlockUpdated'; payload: { blockId: string; title?: string; notes?: string; tags?: string[] } };
+  | { type: 'BlockUpdated'; payload: { blockId: string; title?: string; notes?: string; tags?: string[] } }
+  | { type: 'SlotReordered'; payload: { slotId: string; order: number } };
 
 export type PersistedEvent = WritingEvent & {
   id: string;
