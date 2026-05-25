@@ -115,6 +115,15 @@ export default function Project() {
     await loadProjection();
   }
 
+  async function handleBlockUnassigned(blockId: string, fromSlot: string) {
+    if (!projectId) return;
+    await appendEvent(projectId, {
+      type: 'BlockUnassigned',
+      payload: { blockId, fromSlot, toSlot: '' },
+    });
+    await loadProjection();
+  }
+
   async function handleSlotReordered(slotId: string, newOrder: number) {
     if (!projectId) return;
     await appendEvent(projectId, {
@@ -228,6 +237,7 @@ export default function Project() {
           blocks={projection.blocks}
           outlineAssignments={projection.outlineAssignments}
           onBlockAssigned={handleBlockAssigned}
+          onBlockUnassigned={handleBlockUnassigned}
         />
       </div>
     </div>

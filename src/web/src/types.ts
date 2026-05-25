@@ -75,6 +75,7 @@ export interface Block {
   title: string;
   color: BlockColor;
   slot: string;
+  boardSlot: string;
   tags: string[];
   notes?: string;
   pinned: boolean;

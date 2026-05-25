@@ -115,13 +115,6 @@ export default function BlockDetail() {
     });
   }
 
-  async function togglePin() {
-    if (!projectId || !blockId || !projection) return;
-    const block = projection.blocks.find(b => b.id === blockId);
-    if (!block) return;
-    await appendEvent(projectId, { type: block.pinned ? 'BlockUnpinned' : 'BlockPinned', payload: { blockId } });
-    await load();
-  }
 
   if (loading) {
     return (
@@ -271,13 +264,11 @@ export default function BlockDetail() {
             placeholder="Block title"
           />
           <div className="block-detail-header-actions">
-            <button
-              className={`block-detail-pin-btn${block.pinned ? ' pinned' : ''}`}
-              onClick={togglePin}
-              title={block.pinned ? 'Pinned — stays on board when assigned to outline. Click to unpin.' : 'Pin to keep on board when assigned to outline'}
-            >
-              <i className="ti ti-pin" />
-            </button>
+            {block.pinned && (
+              <span className="block-detail-pin-indicator" title="Pinned — stays on board when assigned to outline">
+                <i className="ti ti-pin" />
+              </span>
+            )}
 
             {assignedSlot && (
               <span className="block-detail-assigned-chip">

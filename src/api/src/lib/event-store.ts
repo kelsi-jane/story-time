@@ -19,6 +19,7 @@ export interface Block {
   title: string;
   color: BlockColor;
   slot: string;
+  boardSlot: string;
   tags: string[];
   notes?: string;
   pinned: boolean;
@@ -188,6 +189,7 @@ function projectEvents(events: PersistedEvent[]): Projection {
           title: ev.payload.title,
           color: ev.payload.color,
           slot: ev.payload.slot,
+          boardSlot: ev.payload.slot,
           tags: [],
           pinned: false,
           status: 'active',
@@ -199,7 +201,7 @@ function projectEvents(events: PersistedEvent[]): Projection {
 
       case 'BlockMoved': {
         const block = blocks.find(b => b.id === ev.payload.blockId);
-        if (block) { block.slot = ev.payload.toSlot; block.updatedAt = ev.timestamp; }
+        if (block) { block.slot = ev.payload.toSlot; block.boardSlot = ev.payload.toSlot; block.updatedAt = ev.timestamp; }
         meta.updatedAt = ev.timestamp;
         break;
       }
@@ -224,14 +226,11 @@ function projectEvents(events: PersistedEvent[]): Projection {
       case 'BlockUnassigned': {
         const block = blocks.find(b => b.id === ev.payload.blockId);
         if (block) {
-          if (block.pinned) {
-            const idx = outlineAssignments.findIndex(
-              a => a.blockId === ev.payload.blockId && a.slotId === ev.payload.fromSlot,
-            );
-            if (idx !== -1) outlineAssignments.splice(idx, 1);
-          } else {
-            block.slot = ev.payload.toSlot;
-          }
+          const idx = outlineAssignments.findIndex(
+            a => a.blockId === ev.payload.blockId && a.slotId === ev.payload.fromSlot,
+          );
+          if (idx !== -1) outlineAssignments.splice(idx, 1);
+          block.slot = block.boardSlot;
           block.updatedAt = ev.timestamp;
         }
         meta.updatedAt = ev.timestamp;
