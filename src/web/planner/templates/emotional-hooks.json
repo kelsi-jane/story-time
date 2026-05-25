@@ -1,0 +1,15 @@
+[
+    { "name": "scape_goat", "example": "second-guessing every move because mistakes = conflict" },
+    { "name": "fixer", "example": "had to solve adult problems too early; exhausted and unsure of what to fix next."},
+    { "name": "invisible", "exmple": "not being heard or seen, so questions self: questions & voice"},
+
+    { "name": "imposter_syndrome", "example": "feeling like a fraud, even when successful" },
+    { "name": "fear_of_rejection", "example": "avoiding social situations to prevent being rejected" },
+    { "name": "perfectionism", "example": "striving for flawlessness and setting high standards" },
+    { "name": "loneliness", "example": "feeling isolated and disconnected from others" },
+    { "name": "anxiety", "example": "constant worry and fear about future events" },
+    { "name": "depression", "example": "persistent sadness and loss of interest in activities" },
+    { "name": "self_doubt", "example": "questioning one's abilities and worth" },
+    { "name": "guilt", "example": "feeling responsible for something bad that happened" },
+    { "name": "shame", "example": "feeling embarrassed or humiliated about oneself" }
+]
