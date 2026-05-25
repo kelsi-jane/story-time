@@ -50,7 +50,7 @@ Autumn took it at a full run. Obviously. She cleared the whole thing in four bou
 
 "Was that the lesson? Was that your whole plan all along?"
 
-He tilted his head — that particular tilt that meant he wasn't going to answer directly. "I've been watching you find the way all afternoon," he said. "Every every time you thought you were lost, you found it again." He looked at me, no joke in it. "You've been doing this the whole time. You just needed to see it."
+He tilted his head — that particular tilt that meant he wasn't going to answer directly. "I've been watching you find the way all afternoon," he said. "Every time you thought you were lost, you found it again." He looked at me, no joke in it. "You've been doing this the whole time. You just needed to see it."
 
 I stood there with wet boots and muddy hands in the gold light on the far bank, and something settled in me. Not a big dramatic thing. A quiet thing, like a door clicking shut in exactly the right way. Like a room I hadn't known was cluttered had gotten a little tidier.
 
