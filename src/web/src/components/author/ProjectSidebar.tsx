@@ -4,6 +4,7 @@ import { getTemplate } from '../../data/templates';
 interface Props {
   meta: ProjectMeta;
   blockCount: number;
+  collapsed?: boolean;
 }
 
 const NAV_ITEMS = [
@@ -15,11 +16,11 @@ const NAV_ITEMS = [
   { icon: 'ti-message-circle', label: 'feedback', active: false },
 ];
 
-export default function ProjectSidebar({ meta, blockCount }: Props) {
+export default function ProjectSidebar({ meta, blockCount, collapsed }: Props) {
   const template = getTemplate(meta.templateId);
 
   return (
-    <div className="board-sidebar">
+    <div className={`board-sidebar${collapsed ? ' collapsed' : ''}`}>
       <div className="board-sidebar-top">
         <div className="board-sidebar-brand">wistful.me</div>
         <div className="board-sidebar-story">{meta.title}</div>

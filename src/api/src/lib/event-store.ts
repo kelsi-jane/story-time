@@ -66,7 +66,8 @@ export type WritingEvent =
   | { type: 'BlockPinned'; payload: { blockId: string } }
   | { type: 'BlockUnpinned'; payload: { blockId: string } }
   | { type: 'BlockStatusChanged'; payload: { blockId: string; status: BlockStatus } }
-  | { type: 'BlockUpdated'; payload: { blockId: string; title?: string; notes?: string; tags?: string[] } };
+  | { type: 'BlockUpdated'; payload: { blockId: string; title?: string; notes?: string; tags?: string[] } }
+  | { type: 'SlotReordered'; payload: { slotId: string; order: number } };
 
 export type PersistedEvent = WritingEvent & {
   id: string;
@@ -166,6 +167,20 @@ function projectEvents(events: PersistedEvent[]): Projection {
           hidden: false,
         });
         break;
+
+      case 'SlotReordered': {
+        const target = slots.find(s => s.id === ev.payload.slotId);
+        if (!target) break;
+        const oldOrder = target.order;
+        const newOrder = ev.payload.order;
+        if (newOrder < oldOrder) {
+          slots.forEach(s => { if (s.id !== target.id && s.order >= newOrder && s.order < oldOrder) s.order++; });
+        } else {
+          slots.forEach(s => { if (s.id !== target.id && s.order > oldOrder && s.order <= newOrder) s.order--; });
+        }
+        target.order = newOrder;
+        break;
+      }
 
       case 'BlockCreated':
         blocks.push({

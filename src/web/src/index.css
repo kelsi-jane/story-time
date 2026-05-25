@@ -776,6 +776,41 @@ textarea.input {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  transition: width 0.15s ease, min-width 0.15s ease;
+}
+
+.board-sidebar.collapsed {
+  width: 0;
+  min-width: 0;
+  border-right: none;
+}
+
+.board-sidebar-toggle {
+  align-self: flex-start;
+  margin-top: 14px;
+  width: 14px;
+  height: 44px;
+  min-width: 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: none;
+  border-radius: 0 6px 6px 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  flex-shrink: 0;
+  box-shadow: 2px 0 4px rgba(0,0,0,0.06);
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+}
+
+.board-sidebar-toggle:hover {
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  box-shadow: 2px 0 8px rgba(0,0,0,0.1);
 }
 
 .board-main {
@@ -785,14 +820,35 @@ textarea.input {
   min-width: 0;
 }
 
+.board-outline-wrapper {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .board-outline-panel {
-  width: 206px;
-  min-width: 206px;
+  flex: 1;
+  width: 100%;
   background: var(--color-surface);
   border-left: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.board-resize-handle {
+  width: 5px;
+  min-width: 5px;
+  flex-shrink: 0;
+  background: transparent;
+  cursor: col-resize;
+  transition: background 0.15s;
+  position: relative;
+}
+
+.board-resize-handle:hover {
+  background: var(--color-border);
 }
 
 /* Sidebar sections */
@@ -935,18 +991,35 @@ textarea.input {
 }
 
 /* Board canvas */
-.board-canvas {
+.board-canvas-columns {
   flex: 1;
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 14px;
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.board-canvas-columns .board-zone {
+  width: 240px;
+  min-width: 240px;
+  flex-shrink: 0;
+}
+
+.board-canvas-rows {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding: 14px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
-.board-zone-row {
-  display: flex;
-  gap: 10px;
+.board-canvas-rows .board-zone {
+  width: 100%;
 }
 
 .board-zone {
@@ -957,11 +1030,40 @@ textarea.input {
   display: flex;
   flex-direction: column;
   min-height: 150px;
-  flex: 1;
 }
 
-.board-zone.wide {
-  flex: 2.4;
+.board-layout-toggle {
+  display: flex;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.board-layout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 26px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  border: none;
+  cursor: pointer;
+}
+
+.board-layout-btn + .board-layout-btn {
+  border-left: 1px solid var(--color-border);
+}
+
+.board-layout-btn:hover {
+  background: var(--color-background);
+  color: var(--color-text-primary);
+}
+
+.board-layout-btn.active {
+  background: var(--color-background);
+  color: var(--color-text-primary);
 }
 
 .board-zone-header {
@@ -969,11 +1071,28 @@ textarea.input {
   align-items: center;
   gap: 6px;
   margin-bottom: 8px;
+  cursor: grab;
+  user-select: none;
+}
+
+.board-zone-header:active {
+  cursor: grabbing;
 }
 
 .board-zone-header i {
   font-size: 14px;
   color: var(--color-text-secondary);
+}
+
+.board-zone-grip {
+  opacity: 0;
+  transition: opacity 0.1s;
+  font-size: 13px !important;
+  color: var(--color-text-tertiary) !important;
+}
+
+.board-zone:hover .board-zone-grip {
+  opacity: 1;
 }
 
 .board-zone-label {
@@ -1030,6 +1149,11 @@ textarea.input {
 .board-zone.drag-over {
   border-color: var(--color-accent);
   background: color-mix(in srgb, var(--color-accent) 6%, var(--color-surface));
+}
+
+.board-zone.zone-drag-over {
+  border-color: var(--color-text-secondary);
+  border-style: dashed;
 }
 
 .board-zone.drag-over .board-zone-empty {
