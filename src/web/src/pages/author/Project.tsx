@@ -51,9 +51,21 @@ export default function Project() {
 
   async function handleBlockAssigned(blockId: string, fromSlot: string, toSlot: string) {
     if (!projectId) return;
+    const block = projection?.blocks.find(b => b.id === blockId);
     await appendEvent(projectId, {
       type: 'BlockAssigned',
-      payload: { blockId, fromSlot, toSlot },
+      payload: { blockId, fromSlot, toSlot, referenced: block?.pinned ?? false },
+    });
+    await loadProjection();
+  }
+
+  async function handleBlockPinToggled(blockId: string) {
+    if (!projectId) return;
+    const block = projection?.blocks.find(b => b.id === blockId);
+    if (!block) return;
+    await appendEvent(projectId, {
+      type: block.pinned ? 'BlockUnpinned' : 'BlockPinned',
+      payload: { blockId },
     });
     await loadProjection();
   }
@@ -105,12 +117,14 @@ export default function Project() {
           onBlockCreated={handleBlockCreated}
           onBlockMoved={handleBlockMoved}
           onBlockClick={(blockId) => navigate(`/author/projects/${projectId}/blocks/${blockId}`)}
+          onBlockPinToggled={handleBlockPinToggled}
         />
       </div>
 
       <OutlinePanel
         slots={projection.slots}
         blocks={projection.blocks}
+        outlineAssignments={projection.outlineAssignments}
         onBlockAssigned={handleBlockAssigned}
       />
     </div>

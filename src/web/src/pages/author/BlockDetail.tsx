@@ -66,15 +66,26 @@ export default function BlockDetail() {
     const block = projection.blocks.find(b => b.id === blockId);
     if (!block) return;
     setShowSlotPicker(false);
-    await appendEvent(projectId, { type: 'BlockAssigned', payload: { blockId, fromSlot: block.slot, toSlot: slotId } });
+    await appendEvent(projectId, {
+      type: 'BlockAssigned',
+      payload: { blockId, fromSlot: block.slot, toSlot: slotId, referenced: block.pinned },
+    });
     await load();
   }
 
-  async function unassign() {
+  async function unassignFromSlot(slotId: string) {
     if (!projectId || !blockId || !projection) return;
     const block = projection.blocks.find(b => b.id === blockId);
     if (!block) return;
-    await appendEvent(projectId, { type: 'BlockUnassigned', payload: { blockId, fromSlot: block.slot, toSlot: 'unplaced' } });
+    await appendEvent(projectId, { type: 'BlockUnassigned', payload: { blockId, fromSlot: slotId, toSlot: 'unplaced' } });
+    await load();
+  }
+
+  async function togglePin() {
+    if (!projectId || !blockId || !projection) return;
+    const block = projection.blocks.find(b => b.id === blockId);
+    if (!block) return;
+    await appendEvent(projectId, { type: block.pinned ? 'BlockUnpinned' : 'BlockPinned', payload: { blockId } });
     await load();
   }
 
@@ -99,7 +110,16 @@ export default function BlockDetail() {
 
   const activeBlocks = projection.blocks.filter(b => b.status !== 'archived');
   const outlineSlots = projection.slots.filter((s: Slot) => s.area === 'outline');
-  const assignedSlot = outlineSlots.find((s: Slot) => s.id === block.slot);
+  const assignedSlot = !block.pinned ? outlineSlots.find((s: Slot) => s.id === block.slot) : null;
+  const referencedSlots = block.pinned
+    ? projection.outlineAssignments
+        .filter(a => a.blockId === blockId)
+        .map(a => outlineSlots.find(s => s.id === a.slotId))
+        .filter((s): s is Slot => !!s)
+    : [];
+  const availableSlots = outlineSlots.filter(
+    s => s.id !== assignedSlot?.id && !referencedSlots.some(r => r.id === s.id),
+  );
 
   const STATUS_LABELS: Record<BlockStatus, string> = {
     active: 'active',
@@ -142,23 +162,36 @@ export default function BlockDetail() {
             placeholder="Block title"
           />
           <div className="block-detail-header-actions">
-            {assignedSlot ? (
+            <button
+              className={`block-detail-pin-btn${block.pinned ? ' pinned' : ''}`}
+              onClick={togglePin}
+              title={block.pinned ? 'Pinned — stays on board when assigned to outline. Click to unpin.' : 'Pin to keep on board when assigned to outline'}
+            >
+              <i className="ti ti-pin" />
+            </button>
+
+            {assignedSlot && (
               <span className="block-detail-assigned-chip">
                 <i className="ti ti-list" /> {assignedSlot.label}
-                <button className="block-detail-unassign" onClick={unassign} title="Remove from outline">×</button>
+                <button className="block-detail-unassign" onClick={() => unassignFromSlot(assignedSlot.id)} title="Remove from outline">×</button>
               </span>
-            ) : (
+            )}
+
+            {referencedSlots.map(s => (
+              <span key={s.id} className="block-detail-assigned-chip pinned-ref">
+                <i className="ti ti-pin" /> {s.label}
+                <button className="block-detail-unassign" onClick={() => unassignFromSlot(s.id)} title="Remove reference">×</button>
+              </span>
+            ))}
+
+            {availableSlots.length > 0 && (
               <div className="block-detail-assign-wrap">
-                <button
-                  className="board-toolbar-btn"
-                  onClick={() => setShowSlotPicker(v => !v)}
-                  disabled={outlineSlots.length === 0}
-                >
+                <button className="board-toolbar-btn" onClick={() => setShowSlotPicker(v => !v)}>
                   <i className="ti ti-list" /> assign to outline
                 </button>
                 {showSlotPicker && (
                   <div className="block-detail-slot-picker">
-                    {outlineSlots.map((s: Slot) => (
+                    {availableSlots.map((s: Slot) => (
                       <button key={s.id} className="block-detail-slot-option" onClick={() => assignToSlot(s.id)}>
                         {s.label}
                       </button>
@@ -167,6 +200,7 @@ export default function BlockDetail() {
                 )}
               </div>
             )}
+
             <button className="board-toolbar-btn" disabled title="Coming soon — copy a block to a story draft">
               <i className="ti ti-copy" /> copy to story
             </button>

@@ -21,9 +21,15 @@ export interface Block {
   slot: string;
   tags: string[];
   notes?: string;
+  pinned: boolean;
   status: BlockStatus;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface OutlineAssignment {
+  blockId: string;
+  slotId: string;
 }
 
 export interface ProjectMeta {
@@ -39,6 +45,7 @@ export interface Projection {
   meta: ProjectMeta;
   slots: Slot[];
   blocks: Block[];
+  outlineAssignments: OutlineAssignment[];
   eventCount: number;
 }
 
@@ -54,8 +61,10 @@ export type WritingEvent =
   | { type: 'SlotAdded'; payload: { slotId: string; label: string; area: SlotArea; order: number } }
   | { type: 'BlockCreated'; payload: { blockId: string; title: string; color: BlockColor; slot: string } }
   | { type: 'BlockMoved'; payload: { blockId: string; fromSlot: string; toSlot: string } }
-  | { type: 'BlockAssigned'; payload: { blockId: string; fromSlot: string; toSlot: string } }
+  | { type: 'BlockAssigned'; payload: { blockId: string; fromSlot: string; toSlot: string; referenced?: boolean } }
   | { type: 'BlockUnassigned'; payload: { blockId: string; fromSlot: string; toSlot: string } }
+  | { type: 'BlockPinned'; payload: { blockId: string } }
+  | { type: 'BlockUnpinned'; payload: { blockId: string } }
   | { type: 'BlockStatusChanged'; payload: { blockId: string; status: BlockStatus } }
   | { type: 'BlockUpdated'; payload: { blockId: string; title?: string; notes?: string; tags?: string[] } };
 
@@ -133,6 +142,7 @@ function projectEvents(events: PersistedEvent[]): Projection {
   };
   const slots: Slot[] = [];
   const blocks: Block[] = [];
+  const outlineAssignments: OutlineAssignment[] = [];
 
   for (const ev of events) {
     switch (ev.type) {
@@ -164,6 +174,7 @@ function projectEvents(events: PersistedEvent[]): Projection {
           color: ev.payload.color,
           slot: ev.payload.slot,
           tags: [],
+          pinned: false,
           status: 'active',
           createdAt: ev.timestamp,
           updatedAt: ev.timestamp,
@@ -171,24 +182,64 @@ function projectEvents(events: PersistedEvent[]): Projection {
         meta.updatedAt = ev.timestamp;
         break;
 
-      case 'BlockMoved':
-      case 'BlockAssigned':
-      case 'BlockUnassigned': {
+      case 'BlockMoved': {
+        const block = blocks.find(b => b.id === ev.payload.blockId);
+        if (block) { block.slot = ev.payload.toSlot; block.updatedAt = ev.timestamp; }
+        meta.updatedAt = ev.timestamp;
+        break;
+      }
+
+      case 'BlockAssigned': {
         const block = blocks.find(b => b.id === ev.payload.blockId);
         if (block) {
-          block.slot = ev.payload.toSlot;
+          if (ev.payload.referenced) {
+            const already = outlineAssignments.some(
+              a => a.blockId === ev.payload.blockId && a.slotId === ev.payload.toSlot,
+            );
+            if (!already) outlineAssignments.push({ blockId: ev.payload.blockId, slotId: ev.payload.toSlot });
+          } else {
+            block.slot = ev.payload.toSlot;
+          }
           block.updatedAt = ev.timestamp;
         }
         meta.updatedAt = ev.timestamp;
         break;
       }
 
-      case 'BlockStatusChanged': {
+      case 'BlockUnassigned': {
         const block = blocks.find(b => b.id === ev.payload.blockId);
         if (block) {
-          block.status = ev.payload.status;
+          if (block.pinned) {
+            const idx = outlineAssignments.findIndex(
+              a => a.blockId === ev.payload.blockId && a.slotId === ev.payload.fromSlot,
+            );
+            if (idx !== -1) outlineAssignments.splice(idx, 1);
+          } else {
+            block.slot = ev.payload.toSlot;
+          }
           block.updatedAt = ev.timestamp;
         }
+        meta.updatedAt = ev.timestamp;
+        break;
+      }
+
+      case 'BlockPinned': {
+        const block = blocks.find(b => b.id === ev.payload.blockId);
+        if (block) { block.pinned = true; block.updatedAt = ev.timestamp; }
+        meta.updatedAt = ev.timestamp;
+        break;
+      }
+
+      case 'BlockUnpinned': {
+        const block = blocks.find(b => b.id === ev.payload.blockId);
+        if (block) { block.pinned = false; block.updatedAt = ev.timestamp; }
+        meta.updatedAt = ev.timestamp;
+        break;
+      }
+
+      case 'BlockStatusChanged': {
+        const block = blocks.find(b => b.id === ev.payload.blockId);
+        if (block) { block.status = ev.payload.status; block.updatedAt = ev.timestamp; }
         meta.updatedAt = ev.timestamp;
         break;
       }
@@ -208,7 +259,7 @@ function projectEvents(events: PersistedEvent[]): Projection {
   }
 
   slots.sort((a, b) => a.order - b.order);
-  return { meta, slots, blocks, eventCount: events.length };
+  return { meta, slots, blocks, outlineAssignments, eventCount: events.length };
 }
 
 export async function replayEvents(projectId: string): Promise<Projection> {
