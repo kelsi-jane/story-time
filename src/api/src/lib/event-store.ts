@@ -135,16 +135,47 @@ export async function appendEvent(projectId: string, event: PersistedEvent): Pro
   }
 }
 
+// ── Snapshot ──────────────────────────────────────────────────────────────────
+
+interface Snapshot {
+  projection: Projection;
+  eventCount: number;
+}
+
+async function readSnapshot(projectId: string): Promise<Snapshot | null> {
+  try {
+    const blob = await getBlob(`projects/${projectId}/snapshot.json`);
+    const download = await blob.download();
+    const text = await streamToString(download.readableStreamBody!);
+    return JSON.parse(text) as Snapshot;
+  } catch {
+    return null;
+  }
+}
+
+async function writeSnapshot(projectId: string, projection: Projection, eventCount: number): Promise<void> {
+  try {
+    const blob = await getBlob(`projects/${projectId}/snapshot.json`);
+    const body = JSON.stringify({ projection, eventCount });
+    await blob.upload(body, Buffer.byteLength(body, 'utf-8'), {
+      blobHTTPHeaders: { blobContentType: 'application/json; charset=utf-8' },
+      conditions: {},
+    });
+  } catch {
+    // snapshot write failure is non-fatal — next request replays from events
+  }
+}
+
 // ── Projection ────────────────────────────────────────────────────────────────
 
-function projectEvents(events: PersistedEvent[]): Projection {
-  let meta: ProjectMeta = {
+function projectEvents(events: PersistedEvent[], base?: Projection): Projection {
+  let meta: ProjectMeta = base?.meta ?? {
     projectId: '', title: '', authorUsername: '', templateId: '',
     createdAt: '', updatedAt: '',
   };
-  const slots: Slot[] = [];
-  const blocks: Block[] = [];
-  const outlineAssignments: OutlineAssignment[] = [];
+  const slots: Slot[] = base ? JSON.parse(JSON.stringify(base.slots)) : [];
+  const blocks: Block[] = base ? JSON.parse(JSON.stringify(base.blocks)) : [];
+  const outlineAssignments: OutlineAssignment[] = base ? JSON.parse(JSON.stringify(base.outlineAssignments)) : [];
 
   for (const ev of events) {
     switch (ev.type) {
@@ -277,8 +308,21 @@ function projectEvents(events: PersistedEvent[]): Projection {
 }
 
 export async function replayEvents(projectId: string): Promise<Projection> {
-  const { events } = await readEvents(projectId);
-  return projectEvents(events);
+  const [snapshot, { events }] = await Promise.all([
+    readSnapshot(projectId),
+    readEvents(projectId),
+  ]);
+
+  if (snapshot && snapshot.eventCount === events.length) {
+    return snapshot.projection;
+  }
+
+  const base = snapshot && snapshot.eventCount < events.length ? snapshot.projection : undefined;
+  const newEvents = base ? events.slice(snapshot!.eventCount) : events;
+  const projection = projectEvents(newEvents, base);
+
+  await writeSnapshot(projectId, projection, events.length);
+  return projection;
 }
 
 // ── User index ────────────────────────────────────────────────────────────────
