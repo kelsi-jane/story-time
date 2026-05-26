@@ -311,6 +311,9 @@ export default function BlockDetail() {
       <div className="block-detail-main">
         <div className="block-detail-header">
           <div className={`block-detail-content-col sticky-${block.color}`}>
+          <button className="block-detail-new-btn" onClick={handleNewBlock} title="New block">
+            <i className="ti ti-plus" />
+          </button>
           <input
             className="block-detail-title"
             value={title}
