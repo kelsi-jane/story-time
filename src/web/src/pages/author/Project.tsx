@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import AuthorLayout from '../../components/AuthorLayout';
 import ProjectSidebar from '../../components/author/ProjectSidebar';
@@ -153,9 +153,18 @@ export default function Project() {
   }
 
   if (error || !projection) {
+    const isNotFound = !projection && !error;
     return (
       <AuthorLayout>
-        <p style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>{error || 'Project not found.'}</p>
+        <div className="content-missing">
+          <i className={`ti ${isNotFound ? 'ti-folder-off' : 'ti-alert-triangle'} content-missing-icon`} />
+          <p className="content-missing-label">{isNotFound ? 'not found' : 'something went wrong'}</p>
+          <p className="content-missing-heading">{isNotFound ? 'Project not found.' : "This project wouldn't load."}</p>
+          <p className="content-missing-body">
+            {error || "We couldn't find this project. It may have been moved or deleted."}
+          </p>
+          <Link to="/author" className="btn btn-secondary content-missing-cta">← back to projects</Link>
+        </div>
       </AuthorLayout>
     );
   }

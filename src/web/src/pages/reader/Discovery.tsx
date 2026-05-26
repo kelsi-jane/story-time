@@ -175,8 +175,14 @@ export default function Discovery() {
   );
 
   if (error) return (
-    <div style={styles.centered}>
-      <span style={styles.errorText}>{error}</span>
+    <div className="error-page">
+      <div className="error-card">
+        <i className="ti ti-alert-triangle error-icon" />
+        <p className="error-label">unavailable</p>
+        <h1 className="admin-page-heading">The library is closed.</h1>
+        <p className="error-body">We couldn't load the story library. Give it a moment and try again.</p>
+        <button className="btn btn-secondary error-cta" onClick={() => window.location.reload()}>try again</button>
+      </div>
     </div>
   );
 

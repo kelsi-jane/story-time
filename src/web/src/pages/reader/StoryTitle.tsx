@@ -43,12 +43,27 @@ export default function StoryTitle() {
     </div>
   );
 
-  if (error || !story) return (
-    <div style={styles.centered}>
-      <p style={styles.errorText}>{error ?? 'Something went wrong.'}</p>
-      <Link to="/" style={styles.backLink}>← Back to stories</Link>
-    </div>
-  );
+  if (error || !story) {
+    const isNotFound = !story || error?.includes("couldn't be found");
+    return (
+      <div className="error-page">
+        <div className="error-card">
+          <i className={`ti ${isNotFound ? 'ti-book-off' : 'ti-alert-triangle'} error-icon`} />
+          <p className="error-label">{isNotFound ? 'not found' : 'something went wrong'}</p>
+          <h1 className="admin-page-heading">{isNotFound ? "This story's gone quiet." : "The page wouldn't open."}</h1>
+          <p className="error-body">
+            {isNotFound
+              ? "We couldn't find this story on the shelf. The link may be wrong, or it may have moved."
+              : "Something interrupted us on the way here. Give it a moment and try again."}
+          </p>
+          {isNotFound
+            ? <Link to="/" className="btn btn-secondary error-cta">← back to stories</Link>
+            : <button className="btn btn-secondary error-cta" onClick={() => window.location.reload()}>try again</button>
+          }
+        </div>
+      </div>
+    );
+  }
 
   const sortedChapters = story.chapters.slice().sort((a, b) => a.order - b.order);
   const firstChapter = sortedChapters[0];
