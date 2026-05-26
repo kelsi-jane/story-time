@@ -1353,11 +1353,53 @@ textarea.input {
   line-height: 1.4;
 }
 
-.outline-slot-item i {
+.outline-slot-item > i {
   font-size: 11px;
   opacity: 0.4;
   margin-top: 1px;
   flex-shrink: 0;
+}
+
+.outline-slot-item-title {
+  flex: 1;
+}
+
+.outline-slot-return {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: none;
+  background: none;
+  color: var(--color-text-secondary);
+  border-radius: 3px;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0;
+  transition: opacity 0.1s, background 0.1s, color 0.1s;
+}
+
+.outline-slot-return i {
+  font-size: 11px;
+}
+
+.outline-slot-item:hover .outline-slot-return {
+  opacity: 1;
+}
+
+.outline-slot-return:hover {
+  background: var(--color-background);
+  color: var(--color-text-primary);
+}
+
+.block-detail-pin-indicator {
+  display: flex;
+  align-items: center;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  opacity: 0.6;
 }
 
 .outline-slot-empty {
