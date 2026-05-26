@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import TagInput from '../../components/TagInput';
+import SiteBanner from '../../components/SiteBanner';
 import { getProjection, appendEvent } from '../../api/planning';
 import type { Block, BlockColor, BlockStatus, Projection, Slot } from '../../types';
 
@@ -8,6 +9,7 @@ const COLORS: BlockColor[] = ['amber', 'teal', 'coral', 'purple', 'blue'];
 const COLOR_HEX: Record<BlockColor, string> = {
   amber: '#FAC775', teal: '#9FE1CB', coral: '#F5C4B3', purple: '#CECBF6', blue: '#B5D4F4',
 };
+
 
 export default function BlockDetail() {
   const { projectId, blockId } = useParams<{ projectId: string; blockId: string }>();
@@ -19,13 +21,16 @@ export default function BlockDetail() {
   const [notes, setNotes] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [showSlotPicker, setShowSlotPicker] = useState(false);
-  const [quickAdd, setQuickAdd] = useState<{ title: string; color: BlockColor; slotId: string } | null>(null);
+  const [showBoardSlotPicker, setShowBoardSlotPicker] = useState(false);
+  const [navCollapsed, setNavCollapsed] = useState(() =>
+    localStorage.getItem(`block-detail-nav-collapsed-${projectId}`) === 'true'
+  );
   const [collapsedSlots, setCollapsedSlots] = useState<Set<string>>(() => {
     try {
       const stored = localStorage.getItem(`block-detail-collapsed-${projectId}`);
-      return stored ? new Set(JSON.parse(stored) as string[]) : new Set();
+      return stored ? new Set(JSON.parse(stored) as string[]) : new Set(['__board__']);
     } catch {
-      return new Set();
+      return new Set(['__board__']);
     }
   });
 
@@ -69,6 +74,12 @@ export default function BlockDetail() {
     await appendEvent(projectId, { type: 'BlockUpdated', payload: { blockId, tags: newTags } });
   }
 
+  async function changeColor(color: BlockColor) {
+    if (!projectId || !blockId) return;
+    await appendEvent(projectId, { type: 'BlockUpdated', payload: { blockId, color } });
+    await load();
+  }
+
   async function changeStatus(status: BlockStatus) {
     if (!projectId || !blockId) return;
     await appendEvent(projectId, { type: 'BlockStatusChanged', payload: { blockId, status } });
@@ -95,14 +106,36 @@ export default function BlockDetail() {
     await load();
   }
 
-  async function handleQuickAdd() {
-    if (!quickAdd || !quickAdd.title.trim() || !projectId) return;
+  async function togglePin() {
+    if (!projectId || !blockId || !projection) return;
+    const b = projection.blocks.find(b => b.id === blockId);
+    if (!b) return;
+    await appendEvent(projectId, {
+      type: b.pinned ? 'BlockUnpinned' : 'BlockPinned',
+      payload: { blockId },
+    });
+    await load();
+  }
+
+  async function moveToBoardSlot(slotId: string) {
+    if (!projectId || !blockId || !projection) return;
+    const block = projection.blocks.find(b => b.id === blockId);
+    if (!block) return;
+    setShowBoardSlotPicker(false);
+    await appendEvent(projectId, {
+      type: 'BlockMoved',
+      payload: { blockId, fromSlot: block.boardSlot, toSlot: slotId },
+    });
+    await load();
+  }
+
+  async function handleNewBlock() {
+    if (!projectId) return;
     const newBlockId = `blk_${Math.random().toString(36).slice(2, 12)}`;
     await appendEvent(projectId, {
       type: 'BlockCreated',
-      payload: { blockId: newBlockId, title: quickAdd.title.trim(), color: quickAdd.color, slot: quickAdd.slotId },
+      payload: { blockId: newBlockId, title: 'New block', color: 'amber', slot: 'unplaced' },
     });
-    setQuickAdd(null);
     navigate(`/author/projects/${projectId}/blocks/${newBlockId}`);
   }
 
@@ -118,8 +151,11 @@ export default function BlockDetail() {
 
   if (loading) {
     return (
-      <div className="block-detail-shell">
-        <p className="block-detail-loading">Loading…</p>
+      <div className="board-page-shell">
+        <SiteBanner />
+        <div className="block-detail-shell">
+          <p className="block-detail-loading">Loading…</p>
+        </div>
       </div>
     );
   }
@@ -129,13 +165,16 @@ export default function BlockDetail() {
   const block = projection.blocks.find(b => b.id === blockId);
   if (!block) {
     return (
-      <div className="block-detail-shell">
-        <div className="content-missing">
-          <i className="ti ti-note-off content-missing-icon" />
-          <p className="content-missing-label">not found</p>
-          <p className="content-missing-heading">Block not found.</p>
-          <p className="content-missing-body">This block may have been deleted or the link is wrong.</p>
-          <Link to={`/author/projects/${projectId}`} className="btn btn-secondary content-missing-cta">← back to board</Link>
+      <div className="board-page-shell">
+        <SiteBanner />
+        <div className="block-detail-shell">
+          <div className="content-missing">
+            <i className="ti ti-note-off content-missing-icon" />
+            <p className="content-missing-label">not found</p>
+            <p className="content-missing-heading">Block not found.</p>
+            <p className="content-missing-body">This block may have been deleted or the link is wrong.</p>
+            <Link to={`/author/projects/${projectId}`} className="btn btn-secondary content-missing-cta">← back to board</Link>
+          </div>
         </div>
       </div>
     );
@@ -145,25 +184,34 @@ export default function BlockDetail() {
   const boardSlots = projection.slots.filter((s: Slot) => s.area === 'board');
   const outlineSlots = projection.slots.filter((s: Slot) => s.area === 'outline');
 
-  const blocksBySlot = new Map<string, Block[]>();
+  const outlineNavBlocks = new Map<string, Block[]>(outlineSlots.map(s => [s.id, []]));
+  const blocksInOutlineNav = new Set<string>();
   for (const b of activeBlocks) {
-    const arr = blocksBySlot.get(b.slot) ?? [];
-    arr.push(b);
-    blocksBySlot.set(b.slot, arr);
+    if (outlineNavBlocks.has(b.slot)) {
+      outlineNavBlocks.get(b.slot)!.push(b);
+      blocksInOutlineNav.add(b.id);
+    }
+    for (const a of projection.outlineAssignments.filter(a => a.blockId === b.id)) {
+      if (outlineNavBlocks.has(a.slotId)) {
+        outlineNavBlocks.get(a.slotId)!.push(b);
+        blocksInOutlineNav.add(b.id);
+      }
+    }
   }
-  const slotGroups = [...boardSlots, ...outlineSlots]
-    .filter(s => blocksBySlot.has(s.id))
-    .map(s => ({ slot: s, blocks: blocksBySlot.get(s.id)! }));
-  const assignedSlot = !block.pinned ? outlineSlots.find((s: Slot) => s.id === block.slot) : null;
-  const referencedSlots = block.pinned
-    ? projection.outlineAssignments
-        .filter(a => a.blockId === blockId)
-        .map(a => outlineSlots.find(s => s.id === a.slotId))
-        .filter((s): s is Slot => !!s)
-    : [];
-  const availableSlots = outlineSlots.filter(
-    s => s.id !== assignedSlot?.id && !referencedSlots.some(r => r.id === s.id),
+  const outlineNavGroups = outlineSlots
+    .map(s => ({ slot: s, blocks: outlineNavBlocks.get(s.id)! }))
+    .filter(g => g.blocks.length > 0);
+  const onBoardBlocks = activeBlocks.filter(b => !blocksInOutlineNav.has(b.id));
+  const pinRefSlotIds = new Set(
+    projection.outlineAssignments.filter(a => a.blockId === blockId).map(a => a.slotId),
   );
+  const assignedOutlineSlots = outlineSlots.filter(
+    s => pinRefSlotIds.has(s.id) || s.id === block.slot,
+  );
+  const availableSlots = outlineSlots.filter(s => !assignedOutlineSlots.some(a => a.id === s.id));
+
+  const currentBoardSlot = boardSlots.find(s => s.id === block.boardSlot);
+  const otherBoardSlots = boardSlots.filter(s => s.id !== block.boardSlot);
 
   const STATUS_LABELS: Record<BlockStatus, string> = {
     active: 'active',
@@ -173,67 +221,56 @@ export default function BlockDetail() {
   };
 
   return (
+    <div className="board-page-shell">
+    <SiteBanner />
+    <nav className="author-breadcrumb">
+      <Link to="/author" className="author-breadcrumb-link">author</Link>
+      <span className="author-breadcrumb-sep">/</span>
+      <Link to={`/author/projects/${projectId}`} className="author-breadcrumb-link">{projection.meta.title}</Link>
+      <span className="author-breadcrumb-sep">/</span>
+      <span className="author-breadcrumb-current">{block.title}</span>
+      <button className="author-breadcrumb-mobile-add" title="New block" onClick={handleNewBlock}>
+        <i className="ti ti-plus" />
+      </button>
+    </nav>
     <div className="block-detail-shell">
-      <div className="block-detail-nav">
+      <div className={`block-detail-nav${navCollapsed ? ' collapsed' : ''}`}>
         <div className="block-detail-nav-header">
           <div className="block-detail-nav-top">
-            <Link to={`/author/projects/${projectId}`} className="block-detail-back">
-              <i className="ti ti-arrow-left" /> board
-            </Link>
+            <span className="block-detail-project-name">{projection.meta.title}</span>
             <button
               className="block-detail-nav-add"
               title="Add block"
-              onClick={() => setQuickAdd({ title: '', color: 'amber', slotId: 'loose-ideas' })}
+              onClick={handleNewBlock}
             >
               <i className="ti ti-plus" />
             </button>
           </div>
-          <span className="block-detail-project-name">{projection.meta.title}</span>
         </div>
 
-        {quickAdd && (
-          <div className="block-detail-quick-add">
-            <input
-              autoFocus
-              className="block-detail-qa-input"
-              placeholder="Block title…"
-              value={quickAdd.title}
-              onChange={e => setQuickAdd(q => q && ({ ...q, title: e.target.value }))}
-              onKeyDown={e => {
-                if (e.key === 'Enter') handleQuickAdd();
-                if (e.key === 'Escape') setQuickAdd(null);
-              }}
-            />
-            <div className="block-detail-qa-row">
-              <div className="block-detail-qa-colors">
-                {COLORS.map(c => (
-                  <button
-                    key={c}
-                    className={`block-detail-qa-color${quickAdd.color === c ? ' selected' : ''}`}
-                    style={{ background: COLOR_HEX[c] }}
-                    onClick={() => setQuickAdd(q => q && ({ ...q, color: c }))}
-                  />
-                ))}
-              </div>
-              <select
-                className="block-detail-qa-slot"
-                value={quickAdd.slotId}
-                onChange={e => setQuickAdd(q => q && ({ ...q, slotId: e.target.value }))}
-              >
-                {boardSlots.map(s => (
-                  <option key={s.id} value={s.id}>{s.label}</option>
-                ))}
-              </select>
-            </div>
-            <div className="block-detail-qa-actions">
-              <button className="block-detail-qa-btn primary" onClick={handleQuickAdd}>add</button>
-              <button className="block-detail-qa-btn" onClick={() => setQuickAdd(null)}>cancel</button>
-            </div>
-          </div>
-        )}
-
         <div className="block-detail-nav-list">
-          {slotGroups.map(({ slot, blocks: groupBlocks }) => {
+          {onBoardBlocks.length > 0 && (
+            <div className="block-detail-nav-group">
+              <div className="block-detail-nav-group-label block-detail-nav-board-label" onClick={() => toggleSlotCollapsed('__board__')}>
+                <i className={`ti ti-chevron-${collapsedSlots.has('__board__') ? 'right' : 'down'} block-detail-nav-chevron`} />
+                on board
+                <span className="block-detail-nav-group-count">{onBoardBlocks.length}</span>
+              </div>
+              {!collapsedSlots.has('__board__') && onBoardBlocks.map(b => (
+                <div
+                  key={b.id}
+                  className={`block-detail-nav-item${b.id === blockId ? ' active' : ''}`}
+                  onClick={() => navigate(`/author/projects/${projectId}/blocks/${b.id}`)}
+                >
+                  <span className={`block-detail-nav-dot sticky-${b.color}`} />
+                  <span className="block-detail-nav-label">{b.title}</span>
+                  {b.pinned && <i className="ti ti-pin block-detail-nav-pin" />}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {outlineNavGroups.map(({ slot, blocks: groupBlocks }) => {
             const isCollapsed = collapsedSlots.has(slot.id);
             return (
               <div key={slot.id} className="block-detail-nav-group">
@@ -259,8 +296,24 @@ export default function BlockDetail() {
         </div>
       </div>
 
+      <button
+        className="board-sidebar-toggle"
+        onClick={() => setNavCollapsed(v => {
+          const next = !v;
+          localStorage.setItem(`block-detail-nav-collapsed-${projectId}`, String(next));
+          return next;
+        })}
+        title={navCollapsed ? 'Expand panel' : 'Collapse panel'}
+      >
+        <i className={`ti ti-chevron-${navCollapsed ? 'right' : 'left'}`} />
+      </button>
+
       <div className="block-detail-main">
-        <div className={`block-detail-header sticky-${block.color}`}>
+        <div className="block-detail-header">
+          <div className={`block-detail-content-col sticky-${block.color}`}>
+          <button className="block-detail-new-btn" onClick={handleNewBlock} title="New block">
+            <i className="ti ti-plus" />
+          </button>
           <input
             className="block-detail-title"
             value={title}
@@ -270,25 +323,47 @@ export default function BlockDetail() {
             placeholder="Block title"
           />
           <div className="block-detail-header-actions">
-            {block.pinned && (
-              <span className="block-detail-pin-indicator" title="Pinned — stays on board when assigned to outline">
-                <i className="ti ti-pin" />
-              </span>
-            )}
+            <button
+              className={`block-detail-pin-btn${block.pinned ? ' pinned' : ''}`}
+              onClick={togglePin}
+              title={block.pinned ? 'Unpin — remove from board when assigned to outline' : 'Pin — keep on board when assigned to outline'}
+            >
+              <i className="ti ti-pin" />
+            </button>
 
-            {assignedSlot && (
-              <span className="block-detail-assigned-chip">
-                <i className="ti ti-list" /> {assignedSlot.label}
-                <button className="block-detail-unassign" onClick={() => unassignFromSlot(assignedSlot.id)} title="Remove from outline">×</button>
-              </span>
-            )}
+            <div className="block-detail-color-picker">
+              {COLORS.map(c => (
+                <button
+                  key={c}
+                  className={`block-detail-color-dot${block.color === c ? ' active' : ''}`}
+                  style={{ background: COLOR_HEX[c] }}
+                  title={c}
+                  onClick={() => changeColor(c)}
+                />
+              ))}
+            </div>
+          </div>
+          </div>
+        </div>
 
-            {referencedSlots.map(s => (
-              <span key={s.id} className="block-detail-assigned-chip pinned-ref">
-                <i className="ti ti-pin" /> {s.label}
-                <button className="block-detail-unassign" onClick={() => unassignFromSlot(s.id)} title="Remove reference">×</button>
-              </span>
-            ))}
+        <div className="block-detail-body">
+          <div className={`block-detail-content-col sticky-${block.color}-tint`}>
+
+          <div className="block-detail-pickers">
+            <div className="block-detail-assign-wrap">
+              <button className="board-toolbar-btn" onClick={() => setShowBoardSlotPicker(v => !v)}>
+                {currentBoardSlot?.label ?? 'unplaced'}
+              </button>
+              {showBoardSlotPicker && otherBoardSlots.length > 0 && (
+                <div className="block-detail-slot-picker">
+                  {otherBoardSlots.map((s: Slot) => (
+                    <button key={s.id} className="block-detail-slot-option" onClick={() => moveToBoardSlot(s.id)}>
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {availableSlots.length > 0 && (
               <div className="block-detail-assign-wrap">
@@ -307,13 +382,18 @@ export default function BlockDetail() {
               </div>
             )}
 
-            <button className="board-toolbar-btn" disabled title="Coming soon — copy a block to a story draft">
-              <i className="ti ti-copy" /> copy to story
-            </button>
+            {assignedOutlineSlots.length > 0 && (
+              <div className="block-detail-chips-group">
+                {assignedOutlineSlots.map(s => (
+                  <span key={s.id} className={`block-detail-assigned-chip${pinRefSlotIds.has(s.id) ? ' pinned-ref' : ''}`}>
+                    <i className={`ti ${pinRefSlotIds.has(s.id) ? 'ti-pin' : 'ti-list'}`} /> {s.label}
+                    <button className="block-detail-unassign" onClick={() => unassignFromSlot(s.id)} title="Remove from outline">×</button>
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
-        </div>
 
-        <div className="block-detail-body">
           <div className="block-detail-section">
             <label className="block-detail-label">notes</label>
             <textarea
@@ -352,8 +432,10 @@ export default function BlockDetail() {
             <span>·</span>
             <span>updated {new Date(block.updatedAt).toLocaleDateString()}</span>
           </div>
+          </div>
         </div>
       </div>
+    </div>
     </div>
   );
 }
