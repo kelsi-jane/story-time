@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import AuthorLayout from '../../components/AuthorLayout';
+import SiteBanner from '../../components/SiteBanner';
 import ProjectSidebar from '../../components/author/ProjectSidebar';
 import Board from '../../components/author/Board';
 import OutlinePanel from '../../components/author/OutlinePanel';
@@ -176,6 +177,8 @@ export default function Project() {
   });
 
   return (
+    <div className="board-page-shell">
+    <SiteBanner />
     <div className="board-app">
       <ProjectSidebar meta={projection.meta} blockCount={activeBlocks.length} collapsed={sidebarCollapsed} />
       <button
@@ -188,7 +191,12 @@ export default function Project() {
 
       <div className="board-main">
         <div className="board-toolbar">
-          <span className="board-toolbar-title">brainstorm board</span>
+          <nav className="board-toolbar-breadcrumb">
+            <Link to="/author" className="author-breadcrumb-link">author</Link>
+            <span className="author-breadcrumb-sep">/</span>
+            <span className="author-breadcrumb-current">{projection.meta.title}</span>
+          </nav>
+          <div className="board-toolbar-divider" />
           <button className="board-toolbar-btn" disabled>
             <i className="ti ti-filter" /> filter
           </button>
@@ -249,6 +257,7 @@ export default function Project() {
           onBlockUnassigned={handleBlockUnassigned}
         />
       </div>
+    </div>
     </div>
   );
 }

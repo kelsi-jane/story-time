@@ -67,7 +67,7 @@ export type WritingEvent =
   | { type: 'BlockPinned'; payload: { blockId: string } }
   | { type: 'BlockUnpinned'; payload: { blockId: string } }
   | { type: 'BlockStatusChanged'; payload: { blockId: string; status: BlockStatus } }
-  | { type: 'BlockUpdated'; payload: { blockId: string; title?: string; notes?: string; tags?: string[] } }
+  | { type: 'BlockUpdated'; payload: { blockId: string; title?: string; notes?: string; tags?: string[]; color?: BlockColor } }
   | { type: 'SlotReordered'; payload: { slotId: string; order: number } };
 
 export type PersistedEvent = WritingEvent & {
@@ -295,6 +295,7 @@ function projectEvents(events: PersistedEvent[], base?: Projection): Projection 
           if (ev.payload.title !== undefined) block.title = ev.payload.title;
           if (ev.payload.notes !== undefined) block.notes = ev.payload.notes;
           if (ev.payload.tags !== undefined) block.tags = ev.payload.tags;
+          if (ev.payload.color !== undefined) block.color = ev.payload.color;
           block.updatedAt = ev.timestamp;
         }
         meta.updatedAt = ev.timestamp;

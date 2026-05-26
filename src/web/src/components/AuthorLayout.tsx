@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import SiteBanner from './SiteBanner';
 
 interface Props {
   children: React.ReactNode;
@@ -32,27 +33,16 @@ export default function AuthorLayout({ children, breadcrumb }: Props) {
 
   return (
     <div className="author-shell">
-      <header className="author-header">
-        <nav className="author-nav">
-          <Link to="/" className="author-nav-link">Wistful.Me</Link>
-          <span className="author-nav-separator">/</span>
-          <Link to="/author" className="author-nav-link muted">Author</Link>
-          {breadcrumb && (
-            <>
-              <span className="author-nav-separator">/</span>
-              <span className="author-nav-link muted">{breadcrumb}</span>
-            </>
-          )}
-        </nav>
-        <div className="author-header-actions">
-          <a
-            href={import.meta.env.DEV ? '/' : '/.auth/logout?post_logout_redirect_uri=/'}
-            className="author-header-action"
-          >
-            Sign out
-          </a>
-        </div>
-      </header>
+      <SiteBanner />
+      <nav className="author-breadcrumb">
+        <Link to="/author" className="author-breadcrumb-link">author</Link>
+        {breadcrumb && (
+          <>
+            <span className="author-breadcrumb-sep">/</span>
+            <span className="author-breadcrumb-current">{breadcrumb}</span>
+          </>
+        )}
+      </nav>
       <main className="author-main">{children}</main>
     </div>
   );
