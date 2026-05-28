@@ -54,6 +54,16 @@ export default function BlockDetail() {
 
   useEffect(() => { load(); }, [load]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   async function saveTitle() {
     if (!projectId || !blockId || title.trim() === savedTitle.current) return;
     const trimmed = title.trim() || savedTitle.current;
@@ -76,8 +86,13 @@ export default function BlockDetail() {
 
   async function changeColor(color: BlockColor) {
     if (!projectId || !blockId) return;
+
+    setProjection(p => p && {
+      ...p,
+      blocks: p.blocks.map(b => b.id === blockId ? { ...b, color } : b),
+    });
+
     await appendEvent(projectId, { type: 'BlockUpdated', payload: { blockId, color } });
-    await load();
   }
 
   async function changeStatus(status: BlockStatus) {
