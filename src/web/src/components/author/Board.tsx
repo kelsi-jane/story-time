@@ -130,7 +130,7 @@ export default function Board({ slots, blocks, showArchived, layout, onBlockCrea
               <i className={`ti ${zone.icon}`} />
               <span className="board-zone-label">{slot.label}</span>
               <span className="board-zone-count">{zoneBlocks.length}</span>
-              <button className="board-zone-add" onClick={() => startCreate(zone.slotId)} title="Add block">
+              <button className="board-zone-add" onClick={() => startCreate(zone.slotId)} title="Add note">
                 <i className="ti ti-plus" />
               </button>
             </div>
@@ -151,7 +151,7 @@ export default function Board({ slots, blocks, showArchived, layout, onBlockCrea
               <div className="board-zone-create">
                 <input
                   type="text"
-                  placeholder="Block title…"
+                  placeholder="Note title…"
                   value={creating.title}
                   onChange={e => setCreating(c => c && ({ ...c, title: e.target.value }))}
                   onKeyDown={e => { if (e.key === 'Enter') confirmCreate(); if (e.key === 'Escape') setCreating(null); }}

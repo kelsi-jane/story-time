@@ -7,9 +7,10 @@ interface Props {
   outlineAssignments: OutlineAssignment[];
   onBlockAssigned: (blockId: string, fromSlot: string, toSlot: string) => void;
   onBlockUnassigned: (blockId: string, fromSlot: string) => void;
+  onBlockClick: (blockId: string) => void;
 }
 
-export default function OutlinePanel({ slots, blocks, outlineAssignments, onBlockAssigned, onBlockUnassigned }: Props) {
+export default function OutlinePanel({ slots, blocks, outlineAssignments, onBlockAssigned, onBlockUnassigned, onBlockClick }: Props) {
   const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
 
   const outlineSlots = slots.filter(s => s.area === 'outline' && !s.hidden);
@@ -58,13 +59,13 @@ export default function OutlinePanel({ slots, blocks, outlineAssignments, onBloc
               </div>
               {assigned.length === 0 ? (
                 <div className="outline-slot-empty">
-                  {isDragOver ? 'drop here' : 'drop a block here'}
+                  {isDragOver ? 'drop here' : 'drop a note here'}
                 </div>
               ) : (
                 assigned.map(b => (
                   <div key={b.id} className="outline-slot-item">
                     <i className={b.pinned ? 'ti ti-pin' : 'ti ti-note'} />
-                    <span className="outline-slot-item-title">{b.title}</span>
+                    <button className="outline-slot-item-title" onClick={() => onBlockClick(b.id)}>{b.title}</button>
                     <button
                       className="outline-slot-return"
                       title="Return to board"
