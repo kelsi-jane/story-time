@@ -13,6 +13,10 @@
     "401": {
       "statusCode": 302,
       "redirect": "/.auth/login/github"
+    },
+    "403": {
+      "statusCode": 302,
+      "redirect": "/unauthorized"
     }
   },
   "mimeTypes": {
