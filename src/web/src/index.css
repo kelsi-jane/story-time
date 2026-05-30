@@ -970,9 +970,15 @@ textarea.input {
     display: none !important;
   }
 
+  .author-breadcrumb {
+    flex-wrap: wrap;
+  }
+
   .author-breadcrumb-mobile-add {
     display: flex;
     align-items: center;
+    width: 100%;
+    justify-content: flex-end;
   }
 
   .board-canvas-columns,
@@ -1522,6 +1528,17 @@ textarea.input {
 
 .outline-slot-item-title {
   flex: 1;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.outline-slot-item-title:hover {
+  color: var(--color-text-primary);
 }
 
 .outline-slot-return {
@@ -2050,9 +2067,7 @@ textarea.input {
     display: flex;
     align-items: center;
     justify-content: center;
-    position: absolute;
-    top: 10px;
-    right: 10px;
+    margin-left: auto;
     width: 32px;
     height: 32px;
     border-radius: 50%;

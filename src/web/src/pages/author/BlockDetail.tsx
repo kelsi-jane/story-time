@@ -54,6 +54,16 @@ export default function BlockDetail() {
 
   useEffect(() => { load(); }, [load]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   async function saveTitle() {
     if (!projectId || !blockId || title.trim() === savedTitle.current) return;
     const trimmed = title.trim() || savedTitle.current;
@@ -76,8 +86,13 @@ export default function BlockDetail() {
 
   async function changeColor(color: BlockColor) {
     if (!projectId || !blockId) return;
+
+    setProjection(p => p && {
+      ...p,
+      blocks: p.blocks.map(b => b.id === blockId ? { ...b, color } : b),
+    });
+
     await appendEvent(projectId, { type: 'BlockUpdated', payload: { blockId, color } });
-    await load();
   }
 
   async function changeStatus(status: BlockStatus) {
@@ -134,7 +149,7 @@ export default function BlockDetail() {
     const newBlockId = `blk_${Math.random().toString(36).slice(2, 12)}`;
     await appendEvent(projectId, {
       type: 'BlockCreated',
-      payload: { blockId: newBlockId, title: 'New block', color: 'amber', slot: 'unplaced' },
+      payload: { blockId: newBlockId, title: 'New note', color: 'amber', slot: 'unplaced' },
     });
     navigate(`/author/projects/${projectId}/blocks/${newBlockId}`);
   }
@@ -171,8 +186,8 @@ export default function BlockDetail() {
           <div className="content-missing">
             <i className="ti ti-note-off content-missing-icon" />
             <p className="content-missing-label">not found</p>
-            <p className="content-missing-heading">Block not found.</p>
-            <p className="content-missing-body">This block may have been deleted or the link is wrong.</p>
+            <p className="content-missing-heading">Note not found.</p>
+            <p className="content-missing-body">This note may have been deleted or the link is wrong.</p>
             <Link to={`/author/projects/${projectId}`} className="btn btn-secondary content-missing-cta">← back to board</Link>
           </div>
         </div>
@@ -229,7 +244,7 @@ export default function BlockDetail() {
       <Link to={`/author/projects/${projectId}`} className="author-breadcrumb-link">{projection.meta.title}</Link>
       <span className="author-breadcrumb-sep">/</span>
       <span className="author-breadcrumb-current">{block.title}</span>
-      <button className="author-breadcrumb-mobile-add" title="New block" onClick={handleNewBlock}>
+      <button className="author-breadcrumb-mobile-add" title="New note" onClick={handleNewBlock}>
         <i className="ti ti-plus" />
       </button>
     </nav>
@@ -240,7 +255,7 @@ export default function BlockDetail() {
             <span className="block-detail-project-name">{projection.meta.title}</span>
             <button
               className="block-detail-nav-add"
-              title="Add block"
+              title="Add note"
               onClick={handleNewBlock}
             >
               <i className="ti ti-plus" />
@@ -311,16 +326,13 @@ export default function BlockDetail() {
       <div className="block-detail-main">
         <div className="block-detail-header">
           <div className={`block-detail-content-col sticky-${block.color}`}>
-          <button className="block-detail-new-btn" onClick={handleNewBlock} title="New block">
-            <i className="ti ti-plus" />
-          </button>
           <input
             className="block-detail-title"
             value={title}
             onChange={e => setTitle(e.target.value)}
             onBlur={saveTitle}
             onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-            placeholder="Block title"
+            placeholder="Note title"
           />
           <div className="block-detail-header-actions">
             <button
@@ -342,6 +354,10 @@ export default function BlockDetail() {
                 />
               ))}
             </div>
+
+            <button className="block-detail-new-btn" onClick={handleNewBlock} title="New note">
+              <i className="ti ti-plus" />
+            </button>
           </div>
           </div>
         </div>

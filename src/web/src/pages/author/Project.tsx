@@ -204,7 +204,7 @@ export default function Project() {
           <button
             className={`board-toolbar-btn${showArchived ? ' active' : ''}`}
             onClick={toggleShowArchived}
-            title={showArchived ? 'Hide archived blocks' : 'Show archived blocks'}
+            title={showArchived ? 'Hide archived notes' : 'Show archived notes'}
           >
             <i className="ti ti-archive" /> archived
           </button>
@@ -255,6 +255,7 @@ export default function Project() {
           outlineAssignments={projection.outlineAssignments}
           onBlockAssigned={handleBlockAssigned}
           onBlockUnassigned={handleBlockUnassigned}
+          onBlockClick={(blockId) => navigate(`/author/projects/${projectId}/blocks/${blockId}`)}
         />
       </div>
     </div>

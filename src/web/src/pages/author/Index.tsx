@@ -52,7 +52,7 @@ export default function AuthorIndex() {
             <tr>
               <th>Project</th>
               <th>Created</th>
-              <th>Blocks</th>
+              <th>Notes</th>
             </tr>
           </thead>
           <tbody>
