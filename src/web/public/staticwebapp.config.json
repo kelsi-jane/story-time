@@ -1,13 +1,18 @@
 {
-  "routes": [],
-  "auth": {
-    "identityProviders": {
-      "github": {
-        "registration": {
-          "clientIdSettingName": "GITHUB_CLIENT_ID",
-          "clientSecretSettingName": "GITHUB_CLIENT_SECRET"
-        }
-      }
+  "routes": [
+    {
+      "route": "/admin/*",
+      "allowedRoles": ["administrator"]
+    },
+    {
+      "route": "/author/*",
+      "allowedRoles": ["author"]
+    }
+  ],
+  "responseOverrides": {
+    "401": {
+      "statusCode": 302,
+      "redirect": "/.auth/login/github"
     }
   },
   "mimeTypes": {
