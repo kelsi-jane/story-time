@@ -1,15 +1,14 @@
 {
-  "routes": [],
-  "auth": {
-    "identityProviders": {
-      "github": {
-        "registration": {
-          "clientIdSettingName": "GITHUB_CLIENT_ID",
-          "clientSecretSettingName": "GITHUB_CLIENT_SECRET"
-        }
-      }
+  "routes": [
+    {
+      "route": "/admin/*",
+      "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/author/*",
+      "allowedRoles": ["authenticated"]
     }
-  },
+  ],
   "mimeTypes": {
     ".js": "application/javascript",
     ".mjs": "application/javascript",
