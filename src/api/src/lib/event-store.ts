@@ -22,6 +22,7 @@ export interface Block {
   boardSlot: string;
   tags: string[];
   notes?: string;
+  links?: string[];
   pinned: boolean;
   status: BlockStatus;
   createdAt: string;
@@ -67,7 +68,7 @@ export type WritingEvent =
   | { type: 'BlockPinned'; payload: { blockId: string } }
   | { type: 'BlockUnpinned'; payload: { blockId: string } }
   | { type: 'BlockStatusChanged'; payload: { blockId: string; status: BlockStatus } }
-  | { type: 'BlockUpdated'; payload: { blockId: string; title?: string; notes?: string; tags?: string[]; color?: BlockColor } }
+  | { type: 'BlockUpdated'; payload: { blockId: string; title?: string; notes?: string; tags?: string[]; color?: BlockColor; links?: string[] } }
   | { type: 'SlotReordered'; payload: { slotId: string; order: number } };
 
 export type PersistedEvent = WritingEvent & {
@@ -296,6 +297,7 @@ function projectEvents(events: PersistedEvent[], base?: Projection): Projection 
           if (ev.payload.notes !== undefined) block.notes = ev.payload.notes;
           if (ev.payload.tags !== undefined) block.tags = ev.payload.tags;
           if (ev.payload.color !== undefined) block.color = ev.payload.color;
+          if (ev.payload.links !== undefined) block.links = ev.payload.links;
           block.updatedAt = ev.timestamp;
         }
         meta.updatedAt = ev.timestamp;

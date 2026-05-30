@@ -20,6 +20,7 @@ export default function BlockDetail() {
   const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');
   const [tags, setTags] = useState<string[]>([]);
+  const [links, setLinks] = useState<string[]>([]);
   const [showSlotPicker, setShowSlotPicker] = useState(false);
   const [showBoardSlotPicker, setShowBoardSlotPicker] = useState(false);
   const [navCollapsed, setNavCollapsed] = useState(() =>
@@ -36,6 +37,7 @@ export default function BlockDetail() {
 
   const savedTitle = useRef('');
   const savedNotes = useRef('');
+  const savedLinks = useRef<string[]>([]);
 
   const load = useCallback(async () => {
     if (!projectId) return;
@@ -46,8 +48,10 @@ export default function BlockDetail() {
       setTitle(b.title);
       setNotes(b.notes ?? '');
       setTags(b.tags);
+      setLinks(b.links ?? []);
       savedTitle.current = b.title;
       savedNotes.current = b.notes ?? '';
+      savedLinks.current = b.links ?? [];
     }
     setLoading(false);
   }, [projectId, blockId]);
@@ -82,6 +86,15 @@ export default function BlockDetail() {
     setTags(newTags);
     if (!projectId || !blockId) return;
     await appendEvent(projectId, { type: 'BlockUpdated', payload: { blockId, tags: newTags } });
+  }
+
+  async function saveLinks(next: string[]) {
+    if (!projectId || !blockId) return;
+    const clean = next.filter(l => l.trim());
+    if (JSON.stringify(clean) === JSON.stringify(savedLinks.current)) return;
+    savedLinks.current = clean;
+    setLinks(clean);
+    await appendEvent(projectId, { type: 'BlockUpdated', payload: { blockId, links: clean } });
   }
 
   async function changeColor(color: BlockColor) {
@@ -425,6 +438,34 @@ export default function BlockDetail() {
           <div className="block-detail-section">
             <label className="block-detail-label">tags</label>
             <TagInput value={tags} onChange={saveTags} />
+          </div>
+
+          <div className="block-detail-section">
+            <label className="block-detail-label">research links</label>
+            {[...links, ''].map((url, i) => (
+              <div key={i} className="block-detail-links-row">
+                <input
+                  className="block-detail-links-input"
+                  value={url}
+                  placeholder="https://…"
+                  onChange={e => {
+                    const next = [...links];
+                    next[i] = e.target.value;
+                    setLinks(next);
+                  }}
+                  onBlur={() => saveLinks([...links])}
+                />
+                {url.trim() && (
+                  <button
+                    className="block-detail-links-open"
+                    title="Open in new tab"
+                    onClick={() => window.open(url, '_blank', 'noopener,noreferrer')}
+                  >
+                    <i className="ti ti-external-link" />
+                  </button>
+                )}
+              </div>
+            ))}
           </div>
 
           <div className="block-detail-section">
