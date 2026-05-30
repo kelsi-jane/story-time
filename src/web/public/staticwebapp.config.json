@@ -9,6 +9,12 @@
       "allowedRoles": ["authenticated"]
     }
   ],
+  "responseOverrides": {
+    "401": {
+      "statusCode": 302,
+      "redirect": "/.auth/login/github"
+    }
+  }
   "mimeTypes": {
     ".js": "application/javascript",
     ".mjs": "application/javascript",
