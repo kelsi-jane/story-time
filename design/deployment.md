@@ -335,3 +335,49 @@ The seed script is idempotent — it uses `upsertEntity` and can be re-run safel
 | title | string | |
 | order | Int32 | |
 | blobPath | string | `/api/chapters/{id}/content` |
+
+---
+
+## Planning Data Sync
+
+Author planning data (notes, board layout, outline assignments) is stored as append-only event logs in Azure Blob Storage (`planning-data` container). Local development uses Azurite; production uses real Azure Blob. The `sync.ts` script lets you move events between the two stores in either direction.
+
+### Prerequisites
+
+Both Azurite and the Azure Functions host must be running locally before syncing (see **Full stack** setup above). The production storage connection string must be available.
+
+### Usage
+
+```bash
+cd src/api
+
+# Dry run — shows what would be synced, writes nothing
+LOCAL_CONN="UseDevelopmentStorage=true" PROD_CONN="<real-connstr>" \
+  npx ts-node src/sync.ts --project proj_abc123
+
+# Pull production events down to local Azurite
+LOCAL_CONN="UseDevelopmentStorage=true" PROD_CONN="<real-connstr>" \
+  npx ts-node src/sync.ts --project proj_abc123 --pull
+
+# Push local events up to production
+LOCAL_CONN="UseDevelopmentStorage=true" PROD_CONN="<real-connstr>" \
+  npx ts-node src/sync.ts --project proj_abc123 --push
+
+# Both directions at once
+LOCAL_CONN="UseDevelopmentStorage=true" PROD_CONN="<real-connstr>" \
+  npx ts-node src/sync.ts --project proj_abc123 --pull --push
+```
+
+PowerShell equivalent:
+```powershell
+cd src/api
+$env:LOCAL_CONN = "UseDevelopmentStorage=true"
+$env:PROD_CONN  = "<real-connstr>"
+npx ts-node src/sync.ts --project proj_abc123 --pull --push
+```
+
+The `--project` flag takes the `projectId` visible in the URL when viewing a project (`/author/projects/{projectId}`).
+
+### How it works
+
+Events are cloned verbatim — the original `id`, `timestamp`, and `userId` are preserved exactly. The script diffs the two stores by event ID, merges any missing events in chronological order, and invalidates the destination's projection snapshot so it rebuilds cleanly on next load. Running without `--pull` or `--push` is always safe (dry run only).
