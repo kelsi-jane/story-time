@@ -14,7 +14,7 @@
       "statusCode": 302,
       "redirect": "/.auth/login/github"
     }
-  }
+  },
   "mimeTypes": {
     ".js": "application/javascript",
     ".mjs": "application/javascript",
