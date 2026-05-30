@@ -2,13 +2,19 @@
   "routes": [
     {
       "route": "/admin/*",
-      "allowedRoles": ["authenticated"]
+      "allowedRoles": ["administrator"]
     },
     {
       "route": "/author/*",
-      "allowedRoles": ["authenticated"]
+      "allowedRoles": ["author"]
     }
   ],
+  "responseOverrides": {
+    "401": {
+      "statusCode": 302,
+      "redirect": "/.auth/login/github"
+    }
+  },
   "mimeTypes": {
     ".js": "application/javascript",
     ".mjs": "application/javascript",
