@@ -94,7 +94,7 @@ export default function Project() {
       type: 'BlockCreated',
       payload: { blockId, title, color, slot: slotId },
     });
-    await loadProjection();
+    navigate(`/author/projects/${projectId}/blocks/${blockId}`);
   }
 
   async function handleBlockMoved(blockId: string, fromSlot: string, toSlot: string) {
