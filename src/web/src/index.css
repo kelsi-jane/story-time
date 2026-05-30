@@ -2223,6 +2223,56 @@ textarea.input {
   opacity: 0.6;
 }
 
+/* Research links */
+.block-detail-links-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.block-detail-links-input {
+  flex: 1;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: var(--color-text-primary);
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 7px 10px;
+  box-sizing: border-box;
+}
+
+.block-detail-links-input:focus {
+  outline: none;
+  border-color: var(--color-text-secondary);
+}
+
+.block-detail-links-input::placeholder {
+  color: var(--color-text-secondary);
+  opacity: 0.6;
+}
+
+.block-detail-links-open {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: 0;
+}
+
+.block-detail-links-open:hover {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
 /* Status buttons */
 .block-detail-status-row {
   display: flex;
