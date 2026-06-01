@@ -1,13 +1,14 @@
 export interface AuthUser {
   username: string;
   userId: string;
+  roles: string[];
 }
 
 export async function getAuthUser(): Promise<AuthUser | null> {
   if (import.meta.env.DEV) {
     const username = import.meta.env.VITE_DEV_AUTH_USERNAME as string | undefined;
     if (!username) return null;
-    return { username, userId: username };
+    return { username, userId: username, roles: ['authenticated', 'administrator', 'author'] };
   }
   try {
     const res = await fetch('/.auth/me');
@@ -15,7 +16,11 @@ export async function getAuthUser(): Promise<AuthUser | null> {
     const data = await res.json();
     const principal = data?.clientPrincipal;
     if (!principal) return null;
-    return { username: principal.userDetails as string, userId: principal.userId as string };
+    return {
+      username: principal.userDetails as string,
+      userId: principal.userId as string,
+      roles: (principal.userRoles as string[]) ?? [],
+    };
   } catch {
     return null;
   }

@@ -35,7 +35,7 @@ export default function AuthorLayout({ children, breadcrumb }: Props) {
     <div className="author-shell">
       <SiteBanner />
       <nav className="author-breadcrumb">
-        <Link to="/author" className="author-breadcrumb-link">author</Link>
+        <Link to="/author" className="author-breadcrumb-link">Author Studio</Link>
         {breadcrumb && (
           <>
             <span className="author-breadcrumb-sep">/</span>
