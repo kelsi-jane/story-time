@@ -48,6 +48,7 @@ export interface Projection {
   slots: Slot[];
   blocks: Block[];
   outlineAssignments: OutlineAssignment[];
+  outlineOrder: Record<string, string[]>;
   eventCount: number;
 }
 
@@ -69,7 +70,8 @@ export type WritingEvent =
   | { type: 'BlockUnpinned'; payload: { blockId: string } }
   | { type: 'BlockStatusChanged'; payload: { blockId: string; status: BlockStatus } }
   | { type: 'BlockUpdated'; payload: { blockId: string; title?: string; notes?: string; tags?: string[]; color?: BlockColor; links?: string[] } }
-  | { type: 'SlotReordered'; payload: { slotId: string; order: number } };
+  | { type: 'SlotReordered'; payload: { slotId: string; order: number } }
+  | { type: 'OutlineOrderChanged'; payload: { slotId: string; blockIds: string[] } };
 
 export type PersistedEvent = WritingEvent & {
   id: string;
@@ -143,12 +145,20 @@ interface Snapshot {
   eventCount: number;
 }
 
+// Returns null for snapshots that predate the current Projection schema.
+// Callers treat null as "no snapshot" — a full replay runs and writes a fresh one.
+// Add a check here whenever a new required field is added to Projection.
+function migrateSnapshot(snapshot: Snapshot): Snapshot | null {
+  if (snapshot.projection.outlineOrder === undefined) return null;
+  return snapshot;
+}
+
 async function readSnapshot(projectId: string): Promise<Snapshot | null> {
   try {
     const blob = await getBlob(`projects/${projectId}/snapshot.json`);
     const download = await blob.download();
     const text = await streamToString(download.readableStreamBody!);
-    return JSON.parse(text) as Snapshot;
+    return migrateSnapshot(JSON.parse(text) as Snapshot);
   } catch {
     return null;
   }
@@ -177,6 +187,7 @@ function projectEvents(events: PersistedEvent[], base?: Projection): Projection 
   const slots: Slot[] = base ? JSON.parse(JSON.stringify(base.slots)) : [];
   const blocks: Block[] = base ? JSON.parse(JSON.stringify(base.blocks)) : [];
   const outlineAssignments: OutlineAssignment[] = base ? JSON.parse(JSON.stringify(base.outlineAssignments)) : [];
+  const outlineOrder: Record<string, string[]> = base ? JSON.parse(JSON.stringify(base.outlineOrder ?? {})) : {};
 
   for (const ev of events) {
     switch (ev.type) {
@@ -200,6 +211,11 @@ function projectEvents(events: PersistedEvent[], base?: Projection): Projection 
           hidden: false,
         });
         break;
+
+      case 'OutlineOrderChanged': {
+        outlineOrder[ev.payload.slotId] = ev.payload.blockIds;
+        break;
+      }
 
       case 'SlotReordered': {
         const target = slots.find(s => s.id === ev.payload.slotId);
@@ -307,7 +323,7 @@ function projectEvents(events: PersistedEvent[], base?: Projection): Projection 
   }
 
   slots.sort((a, b) => a.order - b.order);
-  return { meta, slots, blocks, outlineAssignments, eventCount: events.length };
+  return { meta, slots, blocks, outlineAssignments, outlineOrder, eventCount: events.length };
 }
 
 export async function replayEvents(projectId: string): Promise<Projection> {

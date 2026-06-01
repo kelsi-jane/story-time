@@ -125,6 +125,15 @@ export default function Project() {
     await loadProjection();
   }
 
+  async function handleOutlineReordered(slotId: string, blockIds: string[]) {
+    if (!projectId) return;
+    await appendEvent(projectId, {
+      type: 'OutlineOrderChanged',
+      payload: { slotId, blockIds },
+    });
+    await loadProjection();
+  }
+
   async function handleSlotReordered(slotId: string, newOrder: number) {
     if (!projectId) return;
     await appendEvent(projectId, {
@@ -192,7 +201,7 @@ export default function Project() {
       <div className="board-main">
         <div className="board-toolbar">
           <nav className="board-toolbar-breadcrumb">
-            <Link to="/author" className="author-breadcrumb-link">author</Link>
+            <Link to="/author" className="author-breadcrumb-link">Author Studio</Link>
             <span className="author-breadcrumb-sep">/</span>
             <span className="author-breadcrumb-current">{projection.meta.title}</span>
           </nav>
@@ -253,9 +262,11 @@ export default function Project() {
           slots={projection.slots}
           blocks={projection.blocks}
           outlineAssignments={projection.outlineAssignments}
+          outlineOrder={projection.outlineOrder}
           onBlockAssigned={handleBlockAssigned}
           onBlockUnassigned={handleBlockUnassigned}
           onBlockClick={(blockId) => navigate(`/author/projects/${projectId}/blocks/${blockId}`)}
+          onOutlineReordered={handleOutlineReordered}
         />
       </div>
     </div>
