@@ -1779,6 +1779,11 @@ textarea.input {
   color: var(--color-text-primary);
 }
 
+.outline-slot-item.chapter .outline-slot-item-title {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
 .outline-slot-return {
   flex-shrink: 0;
   display: flex;

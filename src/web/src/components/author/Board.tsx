@@ -9,6 +9,7 @@ interface Zone {
 
 const ZONES: Zone[] = [
   { slotId: 'loose-ideas',  icon: 'ti-bulb' },
+  { slotId: 'chapters',     icon: 'ti-book' },
   { slotId: 'characters',   icon: 'ti-users' },
   { slotId: 'scenes-beats', icon: 'ti-clock' },
   { slotId: 'parking-lot',  icon: 'ti-car-garage' },
