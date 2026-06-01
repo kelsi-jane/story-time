@@ -49,6 +49,7 @@ export interface Projection {
   blocks: Block[];
   outlineAssignments: OutlineAssignment[];
   outlineOrder: Record<string, string[]>;
+  chapters: ProjectChapter[];
   eventCount: number;
 }
 
@@ -57,6 +58,14 @@ export interface ProjectListItem {
   title: string;
   createdAt: string;
   blockCount: number;
+}
+
+export interface ProjectChapter {
+  id: string;
+  title: string;
+  order: number;
+  source: 'created' | 'promoted';
+  boardBlockId?: string;
 }
 
 export type WritingEvent =
@@ -71,7 +80,12 @@ export type WritingEvent =
   | { type: 'BlockStatusChanged'; payload: { blockId: string; status: BlockStatus } }
   | { type: 'BlockUpdated'; payload: { blockId: string; title?: string; notes?: string; tags?: string[]; color?: BlockColor; links?: string[] } }
   | { type: 'SlotReordered'; payload: { slotId: string; order: number } }
-  | { type: 'OutlineOrderChanged'; payload: { slotId: string; blockIds: string[] } };
+  | { type: 'OutlineOrderChanged'; payload: { slotId: string; blockIds: string[] } }
+  | { type: 'ChapterCreated';   payload: { chapterId: string; title: string; boardBlockId: string } }
+  | { type: 'ChapterRenamed';   payload: { chapterId: string; title: string } }
+  | { type: 'ChapterReordered'; payload: { orderedChapterIds: string[] } }
+  | { type: 'ChapterDeleted';   payload: { chapterId: string } }
+  | { type: 'ChapterPromoted';  payload: { chapterId: string; title: string; boardBlockId: string } };
 
 export type PersistedEvent = WritingEvent & {
   id: string;
@@ -164,6 +178,10 @@ function migrateSnapshot(snapshot: Snapshot): Snapshot | null {
     });
   }
 
+  if (!snapshot.projection.chapters) {
+    snapshot.projection.chapters = [];
+  }
+
   return snapshot;
 }
 
@@ -202,6 +220,7 @@ function projectEvents(events: PersistedEvent[], base?: Projection): Projection 
   const blocks: Block[] = base ? JSON.parse(JSON.stringify(base.blocks)) : [];
   const outlineAssignments: OutlineAssignment[] = base ? JSON.parse(JSON.stringify(base.outlineAssignments)) : [];
   const outlineOrder: Record<string, string[]> = base ? JSON.parse(JSON.stringify(base.outlineOrder ?? {})) : {};
+  const chapters: ProjectChapter[] = base ? JSON.parse(JSON.stringify(base.chapters ?? [])) : [];
 
   for (const ev of events) {
     switch (ev.type) {
@@ -333,11 +352,59 @@ function projectEvents(events: PersistedEvent[], base?: Projection): Projection 
         meta.updatedAt = ev.timestamp;
         break;
       }
+
+      case 'ChapterCreated': {
+        const { chapterId, title, boardBlockId } = ev.payload;
+        blocks.push({
+          id: boardBlockId, title, color: 'amber', slot: 'chapters', boardSlot: 'chapters',
+          tags: [], pinned: false, status: 'active', createdAt: ev.timestamp, updatedAt: ev.timestamp,
+        });
+        chapters.push({ id: chapterId, title, order: chapters.length, source: 'created', boardBlockId });
+        meta.updatedAt = ev.timestamp;
+        break;
+      }
+
+      case 'ChapterRenamed': {
+        const ch = chapters.find(c => c.id === ev.payload.chapterId);
+        if (ch) {
+          ch.title = ev.payload.title;
+          if (ch.boardBlockId) {
+            const b = blocks.find(b => b.id === ch.boardBlockId);
+            if (b) { b.title = ev.payload.title; b.updatedAt = ev.timestamp; }
+          }
+        }
+        meta.updatedAt = ev.timestamp;
+        break;
+      }
+
+      case 'ChapterReordered': {
+        ev.payload.orderedChapterIds.forEach((id, i) => {
+          const ch = chapters.find(c => c.id === id);
+          if (ch) ch.order = i;
+        });
+        meta.updatedAt = ev.timestamp;
+        break;
+      }
+
+      case 'ChapterDeleted': {
+        const idx = chapters.findIndex(c => c.id === ev.payload.chapterId);
+        if (idx !== -1) chapters.splice(idx, 1);
+        chapters.sort((a, b) => a.order - b.order).forEach((c, i) => { c.order = i; });
+        meta.updatedAt = ev.timestamp;
+        break;
+      }
+
+      case 'ChapterPromoted': {
+        const { chapterId, title, boardBlockId } = ev.payload;
+        chapters.push({ id: chapterId, title, order: chapters.length, source: 'promoted', boardBlockId });
+        meta.updatedAt = ev.timestamp;
+        break;
+      }
     }
   }
 
   slots.sort((a, b) => a.order - b.order);
-  return { meta, slots, blocks, outlineAssignments, outlineOrder, eventCount: events.length };
+  return { meta, slots, blocks, outlineAssignments, outlineOrder, chapters, eventCount: events.length };
 }
 
 export async function replayEvents(projectId: string): Promise<Projection> {

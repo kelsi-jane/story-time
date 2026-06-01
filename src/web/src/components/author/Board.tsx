@@ -30,6 +30,7 @@ interface Props {
   blocks: Block[];
   showArchived: boolean;
   layout: 'columns' | 'rows';
+  linkedChapterIds?: Set<string>;
   onBlockCreated: (slotId: string, title: string, color: BlockColor) => void;
   onBlockMoved: (blockId: string, fromSlot: string, toSlot: string) => void;
   onBlockClick: (blockId: string) => void;
@@ -43,7 +44,7 @@ interface CreateState {
   color: BlockColor;
 }
 
-export default function Board({ slots, blocks, showArchived, layout, onBlockCreated, onBlockMoved, onBlockClick, onBlockPinToggled, onSlotReordered }: Props) {
+export default function Board({ slots, blocks, showArchived, layout, linkedChapterIds, onBlockCreated, onBlockMoved, onBlockClick, onBlockPinToggled, onSlotReordered }: Props) {
   const [creating, setCreating] = useState<CreateState | null>(null);
   const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
   const [draggingZoneId, setDraggingZoneId] = useState<string | null>(null);
@@ -141,6 +142,7 @@ export default function Board({ slots, blocks, showArchived, layout, onBlockCrea
                 <StickyNote
                   key={b.id}
                   block={b}
+                  isChapterLinked={linkedChapterIds?.has(b.id)}
                   onDragStart={() => {}}
                   onClick={onBlockClick}
                   onPinToggle={onBlockPinToggled}

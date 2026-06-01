@@ -184,6 +184,9 @@ export default function Project() {
     const slot = projection.slots.find(s => s.id === b.slot);
     return slot?.area === 'board' || !slot;
   });
+  const linkedChapterIds = new Set(
+    projection.chapters.map(c => c.boardBlockId).filter((id): id is string => !!id)
+  );
 
   return (
     <div className="board-page-shell">
@@ -248,6 +251,7 @@ export default function Project() {
           blocks={boardBlocks}
           showArchived={showArchived}
           layout={boardLayout}
+          linkedChapterIds={linkedChapterIds}
           onBlockCreated={handleBlockCreated}
           onBlockMoved={handleBlockMoved}
           onBlockClick={(blockId) => navigate(`/author/projects/${projectId}/blocks/${blockId}`)}
