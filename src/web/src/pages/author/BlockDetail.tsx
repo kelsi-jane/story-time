@@ -2,8 +2,46 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import SiteBanner from '../../components/SiteBanner';
 import BlockDetailContent from '../../components/author/BlockDetailContent';
+import ChapterDetail from '../../components/author/ChapterDetail';
 import { getProjection, appendEvent } from '../../api/planning';
 import type { Block, Projection, Slot } from '../../types';
+
+function PromoteNudge({ block, projectId, onRefresh }: {
+  block: Block; projectId: string; onRefresh: () => Promise<void>;
+}) {
+  const key = `promote-nudge-${block.id}-dismissed`;
+  const [dismissed, setDismissed] = useState(() => sessionStorage.getItem(key) === '1');
+
+  async function handlePromote() {
+    const chapterId = `ch_${Math.random().toString(36).slice(2, 12)}`;
+    await appendEvent(projectId, {
+      type: 'ChapterPromoted',
+      payload: { chapterId, title: block.title, boardBlockId: block.id },
+    });
+    await onRefresh();
+  }
+
+  if (dismissed) return null;
+
+  return (
+    <div className="chapter-promote-nudge">
+      <span className="chapter-promote-nudge-text">
+        This note is in your chapters zone. Promote it to an official chapter to unlock the full writing suite — content editor, preview, and story view split-pane.
+      </span>
+      <div className="chapter-promote-nudge-actions">
+        <button className="chapter-promote-nudge-btn" onClick={handlePromote}>
+          Promote to Chapter
+        </button>
+        <button className="chapter-promote-nudge-dismiss" onClick={() => {
+          sessionStorage.setItem(key, '1');
+          setDismissed(true);
+        }}>
+          Dismiss
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function BlockDetail() {
   const { projectId, blockId } = useParams<{ projectId: string; blockId: string }>();
@@ -89,6 +127,9 @@ export default function BlockDetail() {
       </div>
     );
   }
+
+  const promotedChapter = projection.chapters.find(ch => ch.boardBlockId === block.id) ?? null;
+  const isChapterZoneNote = block.boardSlot === 'chapters' && !promotedChapter;
 
   const activeBlocks = projection.blocks.filter(b => b.status !== 'archived');
   const outlineSlots = projection.slots.filter((s: Slot) => s.area === 'outline');
@@ -196,13 +237,33 @@ export default function BlockDetail() {
         <i className={`ti ti-chevron-${navCollapsed ? 'right' : 'left'}`} />
       </button>
 
-      <BlockDetailContent
-        block={block}
-        projection={projection}
-        projectId={projectId!}
-        onRefresh={load}
-        onNewBlock={handleNewBlock}
-      />
+      {promotedChapter ? (
+        <ChapterDetail
+          block={block}
+          chapter={promotedChapter}
+          projection={projection}
+          projectId={projectId!}
+          onRefresh={load}
+          onNewBlock={handleNewBlock}
+        />
+      ) : (
+        <div className="chapter-detail-shell">
+          {isChapterZoneNote && (
+            <PromoteNudge
+              block={block}
+              projectId={projectId!}
+              onRefresh={load}
+            />
+          )}
+          <BlockDetailContent
+            block={block}
+            projection={projection}
+            projectId={projectId!}
+            onRefresh={load}
+            onNewBlock={handleNewBlock}
+          />
+        </div>
+      )}
     </div>
     </div>
   );

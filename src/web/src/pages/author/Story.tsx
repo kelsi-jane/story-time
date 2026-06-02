@@ -5,8 +5,9 @@ import ProjectSidebar from '../../components/author/ProjectSidebar';
 import PaneHeader from '../../components/author/PaneHeader';
 import OutlinePanel from '../../components/author/OutlinePanel';
 import StoryNotesPane from '../../components/author/StoryNotesPane';
-import { getProjection, appendEvent } from '../../api/planning';
-import type { Chapter, PaneView, Projection } from '../../types';
+import { getProjection, appendEvent, getChapterDraft } from '../../api/planning';
+import ChapterDetail from '../../components/author/ChapterDetail';
+import type { PaneView, Projection } from '../../types';
 
 type PaneCount = 1 | 2 | 3;
 
@@ -59,6 +60,8 @@ export default function Story() {
   const [paneViews, setPaneViews] = useState<PaneView[]>(() =>
     projectId ? readStoredViews(projectId, readStoredPanes(projectId).count) : [{ kind: 'empty' }]
   );
+  const [chapterDrafts, setChapterDrafts] = useState<Record<string, string | null>>({});
+  const loadingDrafts = useRef<Set<string>>(new Set());
   const containerRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ index: number; startX: number; startValue: number } | null>(null);
 
@@ -73,6 +76,21 @@ export default function Story() {
   }, [projectId]);
 
   useEffect(() => { loadProjection(); }, [loadProjection]);
+
+  useEffect(() => {
+    if (!projectId) return;
+    for (const view of paneViews) {
+      if (view.kind !== 'chapter') continue;
+      if (view.chapterId in chapterDrafts) continue;
+      if (loadingDrafts.current.has(view.chapterId)) continue;
+      loadingDrafts.current.add(view.chapterId);
+      setChapterDrafts(prev => ({ ...prev, [view.chapterId]: null })); // null = loading
+      getChapterDraft(projectId, view.chapterId).then(content => {
+        loadingDrafts.current.delete(view.chapterId);
+        setChapterDrafts(prev => ({ ...prev, [view.chapterId]: content }));
+      });
+    }
+  }, [paneViews, projectId]);
 
   function toggleSidebar() {
     setSidebarCollapsed(prev => {
@@ -144,7 +162,7 @@ export default function Story() {
     return [dividers[0], dividers[1] - dividers[0], 100 - dividers[1]];
   }
 
-  function renderPaneContent(view: PaneView) {
+  function renderPaneContent(view: PaneView, paneIndex: number) {
     switch (view.kind) {
       case 'empty':
         return null;
@@ -176,10 +194,34 @@ export default function Story() {
         ) : null;
       case 'notes':
         return projectId && projection ? (
-          <StoryNotesPane projection={projection} projectId={projectId} onRefresh={loadProjection} />
+          <StoryNotesPane
+            projection={projection}
+            projectId={projectId}
+            onRefresh={loadProjection}
+            selectedBlockId={view.selectedBlockId}
+            onSelectBlock={id => selectView(paneIndex, { kind: 'notes', selectedBlockId: id ?? undefined })}
+          />
         ) : null;
-      case 'chapter':
-        return null; // wired up in a future iteration
+      case 'chapter': {
+        if (!projection || !projectId) return null;
+        const chapter = projection.chapters.find(c => c.id === view.chapterId);
+        const block = chapter?.boardBlockId ? projection.blocks.find(b => b.id === chapter.boardBlockId) : null;
+        if (!chapter || !block) return null;
+        return (
+          <ChapterDetail
+            block={block}
+            chapter={chapter}
+            projection={projection}
+            projectId={projectId}
+            onRefresh={loadProjection}
+            showBanner={false}
+            controlledDraft={chapterDrafts[chapter.id]}
+            onDraftChange={content => setChapterDrafts(prev => ({ ...prev, [chapter.id]: content }))}
+            initialTab={view.tab}
+            onTabChange={tab => selectView(paneIndex, { kind: 'chapter', chapterId: chapter.id, tab })}
+          />
+        );
+      }
     }
   }
 
@@ -192,7 +234,7 @@ export default function Story() {
   if (!projection) return null;
 
   const activeBlocks = projection.blocks.filter(b => b.status !== 'archived').length;
-  const chapters: Chapter[] = [];
+  const chapters = [...projection.chapters].sort((a, b) => a.order - b.order);
 
   return (
     <div className="board-page-shell">
@@ -241,7 +283,7 @@ export default function Story() {
                     onClear={() => selectView(i, { kind: 'empty' })}
                   />
                   <div className="story-pane-body">
-                    {renderPaneContent(paneViews[i] ?? { kind: 'empty' })}
+                    {renderPaneContent(paneViews[i] ?? { kind: 'empty' }, i)}
                   </div>
                 </div>
                 {i < paneCount - 1 && (

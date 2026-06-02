@@ -6,10 +6,19 @@ interface Props {
   projection: Projection;
   projectId: string;
   onRefresh: () => Promise<void>;
+  selectedBlockId?: string;
+  onSelectBlock?: (id: string | null) => void;
 }
 
-export default function StoryNotesPane({ projection, projectId, onRefresh }: Props) {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+export default function StoryNotesPane({ projection, projectId, onRefresh, selectedBlockId, onSelectBlock }: Props) {
+  const [internalSelectedId, setInternalSelectedId] = useState<string | null>(selectedBlockId ?? null);
+
+  const selectedId = internalSelectedId;
+
+  function handleSelect(id: string | null) {
+    setInternalSelectedId(id);
+    onSelectBlock?.(id);
+  }
 
   const boardSlots = projection.slots.filter(s => s.area === 'board');
   const activeBlocks = projection.blocks.filter(b => b.status !== 'archived');
@@ -26,7 +35,7 @@ export default function StoryNotesPane({ projection, projectId, onRefresh }: Pro
   if (selectedBlock) {
     return (
       <div className="story-notes-detail">
-        <button className="story-note-back-btn" onClick={() => setSelectedId(null)} title="Back to notes">
+        <button className="story-note-back-btn" onClick={() => handleSelect(null)} title="Back to notes">
           <i className="ti ti-arrow-left" /> notes
         </button>
         <BlockDetailContent
@@ -52,7 +61,7 @@ export default function StoryNotesPane({ projection, projectId, onRefresh }: Pro
             <div
               key={b.id}
               className="block-detail-nav-item"
-              onClick={() => setSelectedId(b.id)}
+              onClick={() => handleSelect(b.id)}
             >
               <span className={`block-detail-nav-dot sticky-${b.color}`} />
               <span className="block-detail-nav-label">{b.title}</span>

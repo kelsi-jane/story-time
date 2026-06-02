@@ -1,23 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Chapter, PaneView } from '../../types';
+import type { ProjectChapter, PaneView } from '../../types';
 import PaneViewPicker from './PaneViewPicker';
 
 interface Props {
   view: PaneView;
-  chapters: Chapter[];
+  chapters: ProjectChapter[];
   onSelect: (view: PaneView) => void;
   onClear: () => void;
 }
 
-const VIEW_LABELS: Record<PaneView['kind'], string> = {
+const VIEW_LABELS: Record<Exclude<PaneView['kind'], 'chapter'>, string> = {
   empty: 'choose a view',
   outline: 'outline',
   notes: 'notes',
-  chapter: 'chapter',
 };
 
-function viewLabel(view: PaneView): string {
-  if (view.kind === 'chapter') return 'chapter'; // caller could enrich with title later
+function viewLabel(view: PaneView, chapters: ProjectChapter[]): string {
+  if (view.kind === 'chapter') {
+    return chapters.find(c => c.id === view.chapterId)?.title ?? 'chapter';
+  }
   return VIEW_LABELS[view.kind];
 }
 
@@ -48,7 +49,7 @@ export default function PaneHeader({ view, chapters, onSelect, onClear }: Props)
         className={`story-pane-header-btn${isEmpty ? ' empty' : ''}`}
         onClick={() => setOpen(o => !o)}
       >
-        {viewLabel(view)}
+        {viewLabel(view, chapters)}
         <i className={`ti ti-chevron-${open ? 'up' : 'down'} story-pane-header-chevron`} />
       </button>
       {!isEmpty && (

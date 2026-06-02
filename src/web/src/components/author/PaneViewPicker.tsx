@@ -1,7 +1,7 @@
-import type { Chapter, PaneView } from '../../types';
+import type { ProjectChapter, PaneView } from '../../types';
 
 interface Props {
-  chapters: Chapter[];
+  chapters: ProjectChapter[];
   current: PaneView;
   onSelect: (view: PaneView) => void;
 }
