@@ -9,6 +9,7 @@ src/api/dist/
 src/api/local.settings.json
 
 # Azurite local storage emulator data
+.azureite/
 .azurite/
 
 # Environment files

@@ -7,6 +7,7 @@ interface AuthState {
   user: AuthUser | null;
   adminRecord: AdminUser | null;
   isAdmin: boolean;
+  isAuthor: boolean;
   isPrimary: boolean;
   loading: boolean;
 }
@@ -15,6 +16,7 @@ const AuthContext = createContext<AuthState>({
   user: null,
   adminRecord: null,
   isAdmin: false,
+  isAuthor: false,
   isPrimary: false,
   loading: true,
 });
@@ -24,6 +26,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user: null,
     adminRecord: null,
     isAdmin: false,
+    isAuthor: false,
     isPrimary: false,
     loading: true,
   });
@@ -31,7 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     getAuthUser().then(async (user) => {
       if (!user) {
-        setState({ user: null, adminRecord: null, isAdmin: false, isPrimary: false, loading: false });
+        setState({ user: null, adminRecord: null, isAdmin: false, isAuthor: false, isPrimary: false, loading: false });
         return;
       }
       const adminRecord = await isAdminUser(user.username);
@@ -39,6 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         adminRecord,
         isAdmin: Boolean(adminRecord),
+        isAuthor: user.roles.includes('author'),
         isPrimary: adminRecord?.isPrimary ?? false,
         loading: false,
       });

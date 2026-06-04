@@ -56,7 +56,9 @@ async function putUserPreferences(request: HttpRequest, context: InvocationConte
   }
   try {
     const body = await request.text();
-    const blob = getContainerClient().getBlockBlobClient(`${username}/preferences.json`);
+    const container = getContainerClient();
+    await container.createIfNotExists();
+    const blob = container.getBlockBlobClient(`${username}/preferences.json`);
     await blob.upload(body, Buffer.byteLength(body, 'utf-8'), {
       blobHTTPHeaders: { blobContentType: 'application/json' },
     });

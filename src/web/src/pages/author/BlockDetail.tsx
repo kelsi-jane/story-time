@@ -252,7 +252,7 @@ export default function BlockDetail() {
     <div className="board-page-shell">
     <SiteBanner />
     <nav className="author-breadcrumb">
-      <Link to="/author" className="author-breadcrumb-link">author</Link>
+      <Link to="/author" className="author-breadcrumb-link">Author Studio</Link>
       <span className="author-breadcrumb-sep">/</span>
       <Link to={`/author/projects/${projectId}`} className="author-breadcrumb-link">{projection.meta.title}</Link>
       <span className="author-breadcrumb-sep">/</span>
