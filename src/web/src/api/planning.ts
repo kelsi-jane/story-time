@@ -41,3 +41,17 @@ export async function appendEvent(
 export async function getProjection(projectId: string): Promise<Projection> {
   return apiFetch(`projects/${projectId}/projection`);
 }
+
+export async function getChapterDraft(projectId: string, chapterId: string): Promise<string> {
+  const res = await fetch(`/api/planning/projects/${projectId}/chapters/${chapterId}/draft`);
+  if (!res.ok) return '';
+  return res.text();
+}
+
+export async function saveChapterDraft(projectId: string, chapterId: string, content: string): Promise<void> {
+  await fetch(`/api/planning/projects/${projectId}/chapters/${chapterId}/draft`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'text/plain' },
+    body: content,
+  });
+}

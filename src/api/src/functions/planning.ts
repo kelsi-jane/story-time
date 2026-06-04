@@ -201,6 +201,55 @@ async function getProjection(request: HttpRequest, context: InvocationContext): 
   }
 }
 
+async function getChapterDraft(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+  if (!isAdmin(request)) return { status: 401, jsonBody: { message: 'Unauthorized' } };
+  const { projectId, chapterId } = request.params;
+  try {
+    const { BlobServiceClient } = await import('@azure/storage-blob');
+    const connStr = process.env.AZURE_STORAGE_CONNECTION_STRING;
+    if (!connStr) throw new Error('AZURE_STORAGE_CONNECTION_STRING not set');
+    const container = BlobServiceClient.fromConnectionString(connStr).getContainerClient('planning-data');
+    await container.createIfNotExists();
+    const blob = container.getBlobClient(`projects/${projectId}/chapters/${chapterId}/draft.md`);
+    try {
+      const download = await blob.download();
+      const chunks: Buffer[] = [];
+      for await (const chunk of download.readableStreamBody!) {
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+      }
+      return { status: 200, body: Buffer.concat(chunks).toString('utf-8'), headers: { 'Content-Type': 'text/plain; charset=utf-8' } };
+    } catch (err: any) {
+      if (err.statusCode === 404) return { status: 200, body: '', headers: { 'Content-Type': 'text/plain; charset=utf-8' } };
+      throw err;
+    }
+  } catch (err: any) {
+    context.error('getChapterDraft error:', err);
+    return { status: 500, jsonBody: { message: 'Failed to load draft' } };
+  }
+}
+
+async function saveChapterDraft(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+  if (!isAdmin(request)) return { status: 401, jsonBody: { message: 'Unauthorized' } };
+  const { projectId, chapterId } = request.params;
+  try {
+    const content = await request.text();
+    const { BlobServiceClient } = await import('@azure/storage-blob');
+    const connStr = process.env.AZURE_STORAGE_CONNECTION_STRING;
+    if (!connStr) throw new Error('AZURE_STORAGE_CONNECTION_STRING not set');
+    const container = BlobServiceClient.fromConnectionString(connStr).getContainerClient('planning-data');
+    await container.createIfNotExists();
+    const blob = container.getBlockBlobClient(`projects/${projectId}/chapters/${chapterId}/draft.md`);
+    await blob.upload(content, Buffer.byteLength(content, 'utf-8'), {
+      blobHTTPHeaders: { blobContentType: 'text/plain; charset=utf-8' },
+      conditions: {},
+    });
+    return { status: 200, jsonBody: { ok: true } };
+  } catch (err: any) {
+    context.error('saveChapterDraft error:', err);
+    return { status: 500, jsonBody: { message: 'Failed to save draft' } };
+  }
+}
+
 // ── Registration ──────────────────────────────────────────────────────────────
 
 app.http('createProject', {
@@ -229,4 +278,18 @@ app.http('getProjection', {
   authLevel: 'anonymous',
   route: 'planning/projects/{projectId}/projection',
   handler: getProjection,
+});
+
+app.http('getChapterDraft', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'planning/projects/{projectId}/chapters/{chapterId}/draft',
+  handler: getChapterDraft,
+});
+
+app.http('saveChapterDraft', {
+  methods: ['PUT'],
+  authLevel: 'anonymous',
+  route: 'planning/projects/{projectId}/chapters/{chapterId}/draft',
+  handler: saveChapterDraft,
 });

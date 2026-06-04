@@ -127,8 +127,8 @@ export interface ProjectChapter {
 export type PaneView =
   | { kind: 'empty' }
   | { kind: 'outline' }
-  | { kind: 'notes' }
-  | { kind: 'chapter'; chapterId: string };
+  | { kind: 'notes'; selectedBlockId?: string }
+  | { kind: 'chapter'; chapterId: string; tab?: 'notes' | 'content' | 'preview' };
 
 export type WritingEvent =
   | { type: 'ProjectCreated'; payload: { title: string; authorUsername: string; templateId: string } }
