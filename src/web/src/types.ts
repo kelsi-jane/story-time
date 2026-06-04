@@ -104,6 +104,7 @@ export interface Projection {
   slots: Slot[];
   blocks: Block[];
   outlineAssignments: OutlineAssignment[];
+  outlineOrder: Record<string, string[]>;
   eventCount: number;
 }
 
@@ -125,7 +126,8 @@ export type WritingEvent =
   | { type: 'BlockUnpinned'; payload: { blockId: string } }
   | { type: 'BlockStatusChanged'; payload: { blockId: string; status: BlockStatus } }
   | { type: 'BlockUpdated'; payload: { blockId: string; title?: string; notes?: string; tags?: string[]; color?: BlockColor; links?: string[] } }
-  | { type: 'SlotReordered'; payload: { slotId: string; order: number } };
+  | { type: 'SlotReordered'; payload: { slotId: string; order: number } }
+  | { type: 'OutlineOrderChanged'; payload: { slotId: string; blockIds: string[] } };
 
 export type PersistedEvent = WritingEvent & {
   id: string;
