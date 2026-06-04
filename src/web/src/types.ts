@@ -115,6 +115,12 @@ export interface ProjectListItem {
   blockCount: number;
 }
 
+export type PaneView =
+  | { kind: 'empty' }
+  | { kind: 'outline' }
+  | { kind: 'notes' }
+  | { kind: 'chapter'; chapterId: string };
+
 export type WritingEvent =
   | { type: 'ProjectCreated'; payload: { title: string; authorUsername: string; templateId: string } }
   | { type: 'SlotAdded'; payload: { slotId: string; label: string; area: SlotArea; order: number } }
