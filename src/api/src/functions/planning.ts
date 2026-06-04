@@ -10,10 +10,11 @@ import {
 
 const BOARD_ZONES: Array<{ id: string; label: string; order: number }> = [
   { id: 'loose-ideas',  label: 'loose ideas',    order: 0 },
-  { id: 'characters',   label: 'characters',     order: 1 },
-  { id: 'scenes-beats', label: 'scenes / beats', order: 2 },
-  { id: 'parking-lot',  label: 'parking lot',    order: 3 },
-  { id: 'unplaced',     label: 'unplaced',       order: 4 },
+  { id: 'chapters',     label: 'chapters',       order: 1 },
+  { id: 'characters',   label: 'characters',     order: 2 },
+  { id: 'scenes-beats', label: 'scenes / beats', order: 3 },
+  { id: 'parking-lot',  label: 'parking lot',    order: 4 },
+  { id: 'unplaced',     label: 'unplaced',       order: 5 },
 ];
 
 const TEMPLATE_SLOTS: Record<string, Array<{ id: string; label: string; order: number }>> = {

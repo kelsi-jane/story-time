@@ -145,11 +145,25 @@ interface Snapshot {
   eventCount: number;
 }
 
-// Returns null for snapshots that predate the current Projection schema.
-// Callers treat null as "no snapshot" — a full replay runs and writes a fresh one.
-// Add a check here whenever a new required field is added to Projection.
+// Returns null for snapshots that predate the current Projection schema (forces
+// a full replay + fresh snapshot write). Mutates the snapshot in place for
+// additive data migrations that can't be recovered from events alone.
+// — Add a `return null` check for any new required Projection field.
+// — Add a slot/data patch for any new default content seeded after release.
 function migrateSnapshot(snapshot: Snapshot): Snapshot | null {
   if (snapshot.projection.outlineOrder === undefined) return null;
+
+  // Inject the chapters board slot into projects that predate it.
+  // Can't recover via event replay since no SlotAdded event was ever written.
+  if (!snapshot.projection.slots.some(s => s.id === 'chapters')) {
+    snapshot.projection.slots
+      .filter(s => s.area === 'board' && s.order >= 1)
+      .forEach(s => { s.order += 1; });
+    snapshot.projection.slots.push({
+      id: 'chapters', label: 'chapters', area: 'board', order: 1, hidden: false,
+    });
+  }
+
   return snapshot;
 }
 

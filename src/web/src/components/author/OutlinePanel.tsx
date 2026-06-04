@@ -97,7 +97,7 @@ export default function OutlinePanel({ slots, blocks, outlineAssignments, outlin
                         <div className="outline-reorder-indicator" />
                       )}
                       <div
-                        className={`outline-slot-item${reorderDrag?.blockId === b.id ? ' dragging' : ''}`}
+                        className={`outline-slot-item${reorderDrag?.blockId === b.id ? ' dragging' : ''}${b.boardSlot === 'chapters' ? ' chapter' : ''}`}
                         draggable
                         onDragStart={e => {
                           e.dataTransfer.setData('outline-reorder', b.id);
