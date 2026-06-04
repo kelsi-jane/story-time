@@ -105,6 +105,7 @@ export interface Projection {
   blocks: Block[];
   outlineAssignments: OutlineAssignment[];
   outlineOrder: Record<string, string[]>;
+  chapters: ProjectChapter[];
   eventCount: number;
 }
 
@@ -113,6 +114,14 @@ export interface ProjectListItem {
   title: string;
   createdAt: string;
   blockCount: number;
+}
+
+export interface ProjectChapter {
+  id: string;
+  title: string;
+  order: number;
+  source: 'created' | 'promoted';
+  boardBlockId?: string;
 }
 
 export type PaneView =
@@ -133,7 +142,12 @@ export type WritingEvent =
   | { type: 'BlockStatusChanged'; payload: { blockId: string; status: BlockStatus } }
   | { type: 'BlockUpdated'; payload: { blockId: string; title?: string; notes?: string; tags?: string[]; color?: BlockColor; links?: string[] } }
   | { type: 'SlotReordered'; payload: { slotId: string; order: number } }
-  | { type: 'OutlineOrderChanged'; payload: { slotId: string; blockIds: string[] } };
+  | { type: 'OutlineOrderChanged'; payload: { slotId: string; blockIds: string[] } }
+  | { type: 'ChapterCreated';   payload: { chapterId: string; title: string; boardBlockId: string } }
+  | { type: 'ChapterRenamed';   payload: { chapterId: string; title: string } }
+  | { type: 'ChapterReordered'; payload: { orderedChapterIds: string[] } }
+  | { type: 'ChapterDeleted';   payload: { chapterId: string } }
+  | { type: 'ChapterPromoted';  payload: { chapterId: string; title: string; boardBlockId: string } };
 
 export type PersistedEvent = WritingEvent & {
   id: string;

@@ -3,12 +3,13 @@ import type { Block } from '../../types';
 
 interface Props {
   block: Block;
+  isChapterLinked?: boolean;
   onDragStart: (blockId: string) => void;
   onClick: (blockId: string) => void;
   onPinToggle: (blockId: string) => void;
 }
 
-export default function StickyNote({ block, onDragStart, onClick, onPinToggle }: Props) {
+export default function StickyNote({ block, isChapterLinked, onDragStart, onClick, onPinToggle }: Props) {
   const dragged = useRef(false);
   const isArchived = block.status === 'archived';
 
@@ -30,6 +31,7 @@ export default function StickyNote({ block, onDragStart, onClick, onPinToggle }:
         {block.tags.length > 0 && (
           <span className="sticky-tag">{block.tags[0]}</span>
         )}
+        {isChapterLinked && <i className="ti ti-book sticky-chapter-icon" title="Linked to an official chapter" />}
         {isArchived ? (
           <span className="sticky-archived-badge">archived</span>
         ) : (

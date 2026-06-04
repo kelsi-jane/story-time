@@ -18,7 +18,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { icon: 'ti-layout-board',    label: 'brainstorm', path: id => `/author/projects/${id}`,        exact: true  },
   { icon: 'ti-list-details',    label: 'story',      path: id => `/author/projects/${id}/story`,  exact: false },
-  { icon: 'ti-book',            label: 'chapters'   },
+  { icon: 'ti-book',            label: 'chapters',   path: id => `/author/projects/${id}/chapters`, exact: false },
   { icon: 'ti-users',           label: 'characters' },
   { icon: 'ti-map-pin',         label: 'locations'  },
   { icon: 'ti-git-branch',      label: 'history'    },
