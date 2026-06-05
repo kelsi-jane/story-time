@@ -15,9 +15,12 @@ export default function StoryNotesPane({ projection, projectId, onRefresh, selec
 
   const selectedId = internalSelectedId;
 
-  function handleSelect(id: string | null) {
+  async function handleSelect(id: string | null) {
     setInternalSelectedId(id);
     onSelectBlock?.(id);
+    // Returning to the list — refresh so the note detail's unmount flush
+    // (fire-and-forget appendEvent calls) is reflected in the projection.
+    if (id === null) await onRefresh();
   }
 
   const boardSlots = projection.slots.filter(s => s.area === 'board');

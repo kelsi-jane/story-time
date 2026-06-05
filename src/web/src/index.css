@@ -1144,6 +1144,27 @@ textarea.input {
   color: var(--color-text-primary);
 }
 
+.chapter-draft-title-editable {
+  cursor: text;
+}
+
+.chapter-draft-title-editable:hover {
+  color: var(--color-accent);
+}
+
+.chapter-draft-title-input {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--color-accent);
+  outline: none;
+  padding: 0;
+  min-width: 120px;
+}
+
 .chapter-draft-help {
   font-size: 11px;
   color: var(--color-text-secondary);

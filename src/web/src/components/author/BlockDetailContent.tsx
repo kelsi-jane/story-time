@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import TagInput from '../TagInput';
 import { appendEvent } from '../../api/planning';
 import type { Block, BlockColor, BlockStatus, Projection, Slot } from '../../types';
@@ -30,6 +30,33 @@ export default function BlockDetailContent({ block, projection, projectId, onRef
   const savedTitle = useRef(block.title);
   const savedNotes = useRef(block.notes ?? '');
   const savedLinks = useRef(block.links ?? []);
+
+  // Track current field values in refs so the unmount cleanup can read them
+  // without stale closure values (effect with [] deps only captures initial state).
+  const currentTitle = useRef(title);
+  const currentNotes = useRef(notes);
+  useEffect(() => { currentTitle.current = title; });
+  useEffect(() => { currentNotes.current = notes; });
+
+  // Flush unsaved title/notes when navigating away without blurring.
+  useEffect(() => {
+    return () => {
+      const t = (currentTitle.current.trim()) || savedTitle.current;
+      if (t !== savedTitle.current) {
+        appendEvent(projectId, { type: 'BlockUpdated', payload: { blockId: block.id, title: t } });
+      }
+      if (currentNotes.current !== savedNotes.current) {
+        appendEvent(projectId, { type: 'BlockUpdated', payload: { blockId: block.id, notes: currentNotes.current } });
+      }
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (block.title !== savedTitle.current) {
+      setTitle(block.title);
+      savedTitle.current = block.title;
+    }
+  }, [block.title]);
 
   const blockId = block.id;
   const boardSlots = projection.slots.filter((s: Slot) => s.area === 'board');

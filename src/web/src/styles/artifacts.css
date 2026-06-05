@@ -30,6 +30,8 @@
 /* ── sticky-note ──────────────────────────────────────────────────────────── */
 
 .artifact-sticky-note {
+  max-width: 280px;
+  min-height: 160px;
   background: var(--artifact-bg, #FAC775);
   color: var(--artifact-color, #3a2600);
   padding: 22px 24px 28px;
