@@ -39,6 +39,16 @@ export default function ChapterDetail({ block, chapter, projection, projectId, o
     setActiveTab(tab);
     onTabChange?.(tab);
   }
+  const locked = chapter.locked ?? false;
+
+  async function toggleLock() {
+    await appendEvent(projectId, {
+      type: 'ChapterLockChanged',
+      payload: { chapterId: chapter.id, locked: !locked },
+    });
+    await onRefresh();
+  }
+
   // Inline title editing on the Content tab toolbar.
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleValue, setTitleValue] = useState('');
@@ -173,23 +183,33 @@ export default function ChapterDetail({ block, chapter, projection, projectId, o
                   {chapter.title}
                 </span>
               )}
-              <a
-                href="/author/markdown-guide"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="chapter-draft-help"
-                title="Writing & artifact guide"
-              >
-                <i className="ti ti-help-circle" /> markdown help
-              </a>
+              <div className="chapter-draft-toolbar-actions">
+                <button
+                  className={`chapter-lock-btn${locked ? ' locked' : ''}`}
+                  onClick={toggleLock}
+                  title={locked ? 'Locked — click to unlock' : 'Unlocked — click to lock'}
+                >
+                  <i className={`ti ${locked ? 'ti-lock' : 'ti-lock-open'}`} />
+                </button>
+                <a
+                  href="/author/markdown-guide"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="chapter-draft-help"
+                  title="Writing & artifact guide"
+                >
+                  <i className="ti ti-help-circle" /> markdown help
+                </a>
+              </div>
             </div>
             {draftReady ? (
               <textarea
-                className="chapter-draft-textarea"
+                className={`chapter-draft-textarea${locked ? ' locked' : ''}`}
                 value={draft}
-                onChange={e => handleDraftChange(e.target.value)}
-                placeholder="Write your chapter in Markdown…"
-                spellCheck
+                onChange={locked ? undefined : e => handleDraftChange(e.target.value)}
+                readOnly={locked}
+                placeholder={locked ? '' : 'Write your chapter in Markdown…'}
+                spellCheck={!locked}
               />
             ) : (
               <p className="chapter-draft-loading">Loading…</p>
