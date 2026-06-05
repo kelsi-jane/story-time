@@ -2386,6 +2386,23 @@ a.chapter-row-title:hover {
   background: var(--color-background);
 }
 
+.markdown-guide-shell {
+  min-height: 100vh;
+  background: var(--color-background);
+  padding: 48px 24px 80px;
+}
+
+.markdown-guide-body {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.markdown-guide-loading {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
 .author-breadcrumb {
   display: flex;
   align-items: center;

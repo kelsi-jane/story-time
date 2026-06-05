@@ -120,7 +120,7 @@ export interface ProjectChapter {
   id: string;
   title: string;
   order: number;
-  source: 'created' | 'promoted';
+  source?: 'created' | 'promoted';
   boardBlockId?: string;
 }
 

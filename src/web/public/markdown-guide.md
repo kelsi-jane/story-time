@@ -1,0 +1,228 @@
+# Writing Guide for Authors
+
+This guide covers everything you can use in the **Content** tab when writing your chapters — standard formatting and the custom artifact blocks unique to this platform.
+
+---
+
+## Standard Markdown
+
+### Headings
+
+```
+# Chapter Title
+## Scene Heading
+### Sub-section
+```
+
+Use headings sparingly inside prose. A `##` scene heading works well for POV or time shifts.
+
+---
+
+### Emphasis
+
+| Syntax | Result |
+|--------|--------|
+| `*italic*` or `_italic_` | *italic* |
+| `**bold**` or `__bold__` | **bold** |
+| `***bold italic***` | ***bold italic*** |
+
+---
+
+### Paragraphs & Line Breaks
+
+Leave a blank line between paragraphs. A single line break within a paragraph is treated as a space — it does **not** start a new paragraph.
+
+---
+
+### Block Quotes
+
+Use `>` for epigraphs, chapter openers, or quoted speech that stands apart from the prose:
+
+```
+> The past is never dead. It's not even past.
+>
+> — William Faulkner
+```
+
+> The past is never dead. It's not even past.
+>
+> — William Faulkner
+
+---
+
+### Horizontal Rules
+
+A line of three dashes `---` produces a section break:
+
+---
+
+### Lists
+
+```
+- Item one
+- Item two
+  - Nested item
+
+1. First
+2. Second
+3. Third
+```
+
+---
+
+### Inline Code & Code Blocks
+
+Wrap in backticks for inline `code`. Use triple backticks for a fenced block:
+
+```
+```
+A block of text set apart —
+perhaps a cipher, a recipe,
+or a fragment of something older.
+```
+```
+
+---
+
+## Custom Artifacts
+
+Artifacts let you embed physical-world objects directly into your prose — the kind of things your characters might hold, find, or leave behind. They render as styled visual blocks in the Preview tab.
+
+**Syntax:**
+
+```
+:::artifact-name
+Content goes here.
+:::
+```
+
+---
+
+### sticky-note
+
+A handwritten-feel note on amber paper, slightly tilted.
+
+```
+:::sticky-note
+Don't forget — the key is under the third brick from the left.
+K.
+:::
+```
+
+**Best for:** quick notes, reminders left between characters, marginalia.
+
+---
+
+### handwritten
+
+Cursive-style text on ruled lines. Suggests a journal entry, personal letter draft, or inscription.
+
+```
+:::handwritten
+I never meant for any of this to happen.
+If you're reading this, then I suppose it already has.
+:::
+```
+
+**Best for:** diary excerpts, confessions, dedications, inscriptions inside books.
+
+---
+
+### letter
+
+A formal letter on cream paper with a ruled header. Suggests official correspondence.
+
+```
+:::letter
+Dear Mr. Hale,
+
+It is with regret that I must inform you the position has been filled.
+Your application, however, will be kept on file for one year.
+
+Sincerely,
+The Committee
+:::
+```
+
+**Best for:** official notices, correspondence between characters, job offers, rejection letters.
+
+---
+
+### telegram
+
+Monospace text in uppercase, evoking urgency and constraint.
+
+```
+:::telegram
+ARRIVED SAFELY STOP PACKAGE RECOVERED STOP DO NOT CONTACT UNTIL THURSDAY STOP
+:::
+```
+
+**Best for:** urgent messages, wartime dispatches, anything where every word cost money.
+
+---
+
+### clipping
+
+A newspaper clipping in a two-column layout on aged paper.
+
+```
+:::clipping
+LOCAL MAN FOUND MISSING
+
+Authorities confirmed Tuesday that residents have not seen Mr. Edmund Voss
+since last Saturday evening. His vehicle was discovered near Miller's Pond
+with the engine still running.
+
+Anyone with information is urged to contact the Sheriff's office.
+:::
+```
+
+**Best for:** news reports, obituaries, classified ads, public records embedded in the story.
+
+Two optional attributes are available for clippings:
+
+- `torn` — adds scalloped torn edges to the top and bottom
+- `date` — adds a dateline in the upper right corner
+
+```
+:::clipping{torn date="March 14, 1923"}
+LOCAL MAN FOUND MISSING
+
+Authorities confirmed Tuesday that residents have not seen Mr. Edmund Voss
+since last Saturday evening.
+:::
+```
+
+---
+
+## Fonts
+
+Use the `font` attribute on any artifact to override its default typeface. The following fonts are available:
+
+| Name | Value to use | Character |
+|------|-------------|-----------|
+| Caveat | `Caveat` | Handwritten, natural — default for sticky-note and handwritten |
+| Lora | `Lora` | Elegant serif — good for letters and formal documents |
+| Georgia | `Georgia` | Classic newspaper serif — default for clipping |
+| Courier New | `Courier New` | Monospace — default for telegram |
+| Inter | `Inter` | Clean sans-serif — good for modern notes |
+
+**Example:**
+
+```
+:::letter{font="Courier New"}
+To Whom It May Concern,
+
+This letter has been typed, not written by hand.
+:::
+```
+
+---
+
+## Tips
+
+- **Artifacts inside prose** — place a blank line before and after the `:::` block so it sits cleanly between paragraphs.
+- **Nesting** — standard markdown (bold, italic, line breaks) works inside artifact blocks.
+- **Preview** — switch to the **Preview** tab at any time to see how your chapter will look to readers.
+- **Saving** — content saves automatically as you type. There is no save button.

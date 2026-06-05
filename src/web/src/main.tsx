@@ -11,8 +11,11 @@ import '@fontsource/lora/400.css'
 import '@fontsource/lora/400-italic.css'
 import '@fontsource/lora/500.css'
 import '@fontsource/lora/500-italic.css'
+import '@fontsource/caveat/400.css'
+import '@fontsource/caveat/700.css'
 import '@tabler/icons-webfont/dist/tabler-icons.min.css'
 import './index.css'
+import './styles/artifacts.css'
 
 applyTheme(getPreferences().theme);
 

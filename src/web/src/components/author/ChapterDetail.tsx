@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
+import remarkDirective from 'remark-directive';
+import remarkArtifacts from '../../lib/remarkArtifacts';
 import BlockDetailContent from './BlockDetailContent';
 import { getChapterDraft, saveChapterDraft } from '../../api/planning';
 import type { Block, ProjectChapter, Projection } from '../../types';
@@ -120,11 +122,11 @@ export default function ChapterDetail({ block, chapter, projection, projectId, o
             <div className="chapter-draft-toolbar">
               <span className="chapter-draft-title">{chapter.title}</span>
               <a
-                href="https://commonmark.org/help/"
+                href="/author/markdown-guide"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="chapter-draft-help"
-                title="Markdown syntax reference"
+                title="Writing & artifact guide"
               >
                 <i className="ti ti-help-circle" /> markdown help
               </a>
@@ -150,7 +152,7 @@ export default function ChapterDetail({ block, chapter, projection, projectId, o
             {draftReady ? (
               draft ? (
                 <div className="prose">
-                  <ReactMarkdown>{draft}</ReactMarkdown>
+                  <ReactMarkdown remarkPlugins={[remarkDirective, remarkArtifacts]}>{draft}</ReactMarkdown>
                 </div>
               ) : (
                 <p className="chapter-draft-loading">No content yet — write something in the Content tab.</p>

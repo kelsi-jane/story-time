@@ -1,9 +1,9 @@
 import { useRef, useState, useEffect } from 'react';
-import type { Chapter, PaneView } from '../../types';
+import type { ProjectChapter, PaneView } from '../../types';
 import PaneViewPicker from './PaneViewPicker';
 
 interface Props {
-  chapters: Chapter[];
+  chapters: ProjectChapter[];
   onSelect: (view: PaneView) => void;
 }
 

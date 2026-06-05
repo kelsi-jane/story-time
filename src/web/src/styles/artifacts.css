@@ -1,0 +1,160 @@
+/*
+ * Story Artifacts
+ * ───────────────────────────────────────────────────────────────────────────
+ * Embed physical-world objects inside chapter prose using directive syntax:
+ *
+ *   :::sticky-note
+ *   Found tucked in the back of the atlas.
+ *   :::
+ *
+ * To add a new artifact type:
+ *   1. Add a .artifact-{name} rule below following the pattern.
+ *   2. Document the name in the list above.
+ *
+ * Available types:
+ *   sticky-note   handwritten   letter   telegram   clipping
+ * ───────────────────────────────────────────────────────────────────────────
+ */
+
+/* ── Base ─────────────────────────────────────────────────────────────────── */
+
+.artifact {
+  margin: 2em auto;
+  max-width: 520px;
+  position: relative;
+}
+
+.artifact p         { margin: 0 0 0.6em; }
+.artifact p:last-child { margin-bottom: 0; }
+
+/* ── sticky-note ──────────────────────────────────────────────────────────── */
+
+.artifact-sticky-note {
+  background: var(--artifact-bg, #FAC775);
+  color: var(--artifact-color, #3a2600);
+  padding: 22px 24px 28px;
+  border-radius: 2px;
+  font-family: var(--artifact-font, 'Caveat', cursive);
+  font-size: 17px;
+  line-height: 1.7;
+  box-shadow: 3px 4px 14px rgba(0, 0, 0, 0.18);
+  transform: rotate(var(--artifact-tilt, -1.2deg));
+}
+
+/* ── handwritten ──────────────────────────────────────────────────────────── */
+
+.artifact-handwritten {
+  font-family: var(--artifact-font, 'Caveat', cursive);
+  font-style: normal;
+  font-size: 16px;
+  line-height: 1.9;
+  color: var(--artifact-color, #2a2a3a);
+  padding: 16px 20px;
+  border-left: 2px solid #b0aac0;
+  background:
+    linear-gradient(transparent, transparent calc(1.9em - 1px), #e8e4f0 calc(1.9em - 1px), #e8e4f0 1.9em)
+    0 0.35em;
+  background-size: 100% 1.9em;
+}
+
+/* ── letter ───────────────────────────────────────────────────────────────── */
+
+.artifact-letter {
+  background: var(--artifact-bg, #fdfaf4);
+  border: 1px solid #d4c9a8;
+  padding: 32px 36px;
+  font-family: var(--artifact-font, 'Lora', serif);
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--artifact-color, #2c2416);
+  box-shadow: 1px 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.artifact-letter::before {
+  content: '';
+  display: block;
+  border-bottom: 2px solid #c4b48a;
+  margin-bottom: 20px;
+}
+
+/* ── telegram ─────────────────────────────────────────────────────────────── */
+
+.artifact-telegram {
+  background: var(--artifact-bg, #f5f0e0);
+  border: 2px solid #8a7a50;
+  padding: 24px 28px;
+  font-family: var(--artifact-font, 'Courier New', Courier, monospace);
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  line-height: 1.8;
+  color: var(--artifact-color, #1a1400);
+  text-transform: uppercase;
+}
+
+.artifact-telegram::before {
+  content: '— TELEGRAM —';
+  display: block;
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: #8a7a50;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #8a7a50;
+  padding-bottom: 10px;
+}
+
+/* ── clipping ─────────────────────────────────────────────────────────────── */
+
+.artifact-clipping {
+  background: var(--artifact-bg, #f8f5e8);
+  border: 1px solid #c8bfa0;
+  padding: 20px 24px;
+  font-family: var(--artifact-font, 'Georgia', serif);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--artifact-color, #1a1400);
+  box-shadow: 2px 3px 10px rgba(0, 0, 0, 0.12), inset 0 0 40px rgba(200, 180, 120, 0.1);
+  transform: rotate(var(--artifact-tilt, 0.6deg));
+  column-count: 2;
+  column-gap: 20px;
+}
+
+.artifact-clipping::before {
+  content: '';
+  display: block;
+  border-bottom: 3px double #8a7a50;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  column-span: all;
+}
+
+/* date — shown top-right via ::after */
+.artifact-clipping[data-date]::after {
+  content: attr(data-date);
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8a7a50;
+  column-span: all;
+}
+
+/* torn — scalloped mask on top and bottom edges */
+.artifact-clipping[data-torn] {
+  -webkit-mask-image:
+    radial-gradient(circle 6px at 6px 0,   transparent 100%, black 0),
+    radial-gradient(circle 6px at 6px 100%, transparent 100%, black 0);
+  mask-image:
+    radial-gradient(circle 6px at 6px 0,   transparent 100%, black 0),
+    radial-gradient(circle 6px at 6px 100%, transparent 100%, black 0);
+  -webkit-mask-repeat: repeat-x, repeat-x;
+  mask-repeat:         repeat-x, repeat-x;
+  -webkit-mask-size: 12px 6px, 12px 6px;
+  mask-size:         12px 6px, 12px 6px;
+  -webkit-mask-position: 0 0, 0 100%;
+  mask-position:         0 0, 0 100%;
+  margin-top: 6px;
+  margin-bottom: 6px;
+}
