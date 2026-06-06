@@ -4,7 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkDirective from 'remark-directive';
 import remarkArtifacts from '../../lib/remarkArtifacts';
 import BlockDetailContent from './BlockDetailContent';
-import { getChapterDraft, saveChapterDraft } from '../../api/planning';
+import { getChapterDraft, saveChapterDraft, appendEvent } from '../../api/planning';
 import type { Block, ProjectChapter, Projection } from '../../types';
 
 type Tab = 'notes' | 'content' | 'preview';
@@ -39,10 +39,49 @@ export default function ChapterDetail({ block, chapter, projection, projectId, o
     setActiveTab(tab);
     onTabChange?.(tab);
   }
+  const locked = chapter.locked ?? false;
+
+  async function toggleLock() {
+    await appendEvent(projectId, {
+      type: 'ChapterLockChanged',
+      payload: { chapterId: chapter.id, locked: !locked },
+    });
+    await onRefresh();
+  }
+
+  // Inline title editing on the Content tab toolbar.
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleValue, setTitleValue] = useState('');
+
+  function startEditTitle() {
+    setTitleValue(chapter.title);
+    setEditingTitle(true);
+  }
+
+  async function saveTitle() {
+    setEditingTitle(false);
+    const trimmed = titleValue.trim();
+    if (!trimmed || trimmed === chapter.title) return;
+    await appendEvent(projectId, { type: 'ChapterRenamed', payload: { chapterId: chapter.id, title: trimmed } });
+    await onRefresh();
+  }
+
   // Internal draft state — only used in uncontrolled (full-page) mode.
   const [internalDraft, setInternalDraft] = useState('');
   const [draftLoaded, setDraftLoaded] = useState(false);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Holds the value waiting to be written to blob (set when debounce starts, cleared on save).
+  const pendingDraftRef = useRef<string | null>(null);
+
+  // Flush any pending draft save when navigating away without waiting for the debounce.
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      if (pendingDraftRef.current !== null) {
+        saveChapterDraft(projectId, chapter.id, pendingDraftRef.current);
+      }
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const draft = isControlled ? (controlledDraft ?? '') : internalDraft;
   const draftReady = isControlled ? controlledDraft !== null : draftLoaded;
@@ -68,9 +107,12 @@ export default function ChapterDetail({ block, chapter, projection, projectId, o
     } else {
       setInternalDraft(value);
     }
+    pendingDraftRef.current = value;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
       saveChapterDraft(projectId, chapter.id, value);
+      pendingDraftRef.current = null;
+      saveTimerRef.current = null;
     }, 1500);
   }
 
@@ -120,24 +162,54 @@ export default function ChapterDetail({ block, chapter, projection, projectId, o
         {activeTab === 'content' && (
           <div className="chapter-draft-area">
             <div className="chapter-draft-toolbar">
-              <span className="chapter-draft-title">{chapter.title}</span>
-              <a
-                href="/author/markdown-guide"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="chapter-draft-help"
-                title="Writing & artifact guide"
-              >
-                <i className="ti ti-help-circle" /> markdown help
-              </a>
+              {editingTitle ? (
+                <input
+                  className="chapter-draft-title-input"
+                  value={titleValue}
+                  onChange={e => setTitleValue(e.target.value)}
+                  onBlur={saveTitle}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') e.currentTarget.blur();
+                    if (e.key === 'Escape') setEditingTitle(false);
+                  }}
+                  autoFocus
+                />
+              ) : (
+                <span
+                  className="chapter-draft-title chapter-draft-title-editable"
+                  onClick={startEditTitle}
+                  title="Click to rename"
+                >
+                  {chapter.title}
+                </span>
+              )}
+              <div className="chapter-draft-toolbar-actions">
+                <button
+                  className={`chapter-lock-btn${locked ? ' locked' : ''}`}
+                  onClick={toggleLock}
+                  title={locked ? 'Locked — click to unlock' : 'Unlocked — click to lock'}
+                >
+                  <i className={`ti ${locked ? 'ti-lock' : 'ti-lock-open'}`} />
+                </button>
+                <a
+                  href="/author/markdown-guide"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="chapter-draft-help"
+                  title="Writing & artifact guide"
+                >
+                  <i className="ti ti-help-circle" /> markdown help
+                </a>
+              </div>
             </div>
             {draftReady ? (
               <textarea
-                className="chapter-draft-textarea"
+                className={`chapter-draft-textarea${locked ? ' locked' : ''}`}
                 value={draft}
-                onChange={e => handleDraftChange(e.target.value)}
-                placeholder="Write your chapter in Markdown…"
-                spellCheck
+                onChange={locked ? undefined : e => handleDraftChange(e.target.value)}
+                readOnly={locked}
+                placeholder={locked ? '' : 'Write your chapter in Markdown…'}
+                spellCheck={!locked}
               />
             ) : (
               <p className="chapter-draft-loading">Loading…</p>

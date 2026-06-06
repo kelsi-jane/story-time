@@ -1138,10 +1138,64 @@ textarea.input {
   border-bottom: 1px solid var(--color-border);
 }
 
+.chapter-draft-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.chapter-lock-btn {
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  padding: 2px;
+  border-radius: 4px;
+  transition: color 0.1s;
+}
+
+.chapter-lock-btn:hover {
+  color: var(--color-text-primary);
+}
+
+.chapter-lock-btn.locked {
+  color: var(--color-accent);
+}
+
+.chapter-draft-textarea.locked {
+  opacity: 0.55;
+  cursor: default;
+  background: var(--color-surface);
+}
+
 .chapter-draft-title {
   font-size: 13px;
   font-weight: 500;
   color: var(--color-text-primary);
+}
+
+.chapter-draft-title-editable {
+  cursor: text;
+}
+
+.chapter-draft-title-editable:hover {
+  color: var(--color-accent);
+}
+
+.chapter-draft-title-input {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--color-accent);
+  outline: none;
+  padding: 0;
+  min-width: 120px;
 }
 
 .chapter-draft-help {
