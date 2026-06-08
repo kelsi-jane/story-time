@@ -18,6 +18,17 @@ Use headings sparingly inside prose. A `##` scene heading works well for POV or 
 
 ---
 
+### Images & Links
+
+| Syntax | Result |
+|--------|--------|
+| `[link text](https://example.com)` | Clickable hyperlink |
+| `![alt text](https://example.com/photo.jpg)` | Inline image |
+
+Images render full-width inside the reading column. For a more intentional, styled presentation — a photograph a character discovers, a postcard sent between them — use the `:::photo` artifact instead (see below).
+
+---
+
 ### Emphasis
 
 | Syntax | Result |
@@ -192,6 +203,72 @@ LOCAL MAN FOUND MISSING
 Authorities confirmed Tuesday that residents have not seen Mr. Edmund Voss
 since last Saturday evening.
 :::
+```
+
+---
+
+### photo
+
+A polaroid-style photograph with a thick white border and optional handwritten caption below.
+
+```
+:::photo
+![A lighthouse at dusk](https://example.com/lighthouse.jpg)
+Taken the night before everything changed.
+:::
+```
+
+**Best for:** found photographs, character portraits, location imagery, visual scene-setting.
+
+Optional attributes:
+
+- `noborder` — removes the white border and shadow, leaving just the image
+- `tilt` — slight rotation angle (e.g. `tilt="2deg"`)
+- `wrap` — float the photo and flow prose text around it: `wrap="left"` or `wrap="right"`
+
+```
+:::photo{wrap="right" tilt="1.5deg"}
+![Old map fragment](https://example.com/map.jpg)
+Found in the captain's quarters.
+:::
+
+The rest of the paragraph flows naturally to the left of the photograph,
+as if it had been pinned to the margin of the manuscript.
+```
+
+---
+
+### sms
+
+An iPhone-style message thread. Use `::them[message]` for the other person (left, gray) and `::me[message]` for the protagonist's replies (right, blue).
+
+```
+:::sms
+::them[Hey, are you coming tonight?]
+::me[Yeah. Give me an hour.]
+::them[Don't be late this time.]
+::me[I won't.]
+::them[That's what you said last time.]
+:::
+```
+
+**Best for:** text exchanges between characters, evidence on a character's phone, modern correspondence.
+
+Standard inline formatting works inside messages — `**bold**`, `*italic*`, etc.
+
+Optional attributes:
+
+- `wrap` — float the phone and flow prose around it: `wrap="left"` or `wrap="right"`
+- `fade` — clip the conversation at one edge with a gradient fade, suggesting a longer thread: `fade="top"` (bottom is visible, top fades) or `fade="bottom"` (top is visible, bottom fades)
+
+```
+:::sms{wrap="right" fade="bottom"}
+::them[Don't be late this time.]
+::me[I won't.]
+::them[That's what you said last time.]
+:::
+
+She set the phone face-down on the counter and didn't reply.
 ```
 
 ---
