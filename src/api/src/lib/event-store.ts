@@ -65,6 +65,7 @@ export interface ProjectChapter {
   title: string;
   order: number;
   source: 'created' | 'promoted';
+  locked?: boolean;
   boardBlockId?: string;
 }
 
@@ -85,7 +86,8 @@ export type WritingEvent =
   | { type: 'ChapterRenamed';   payload: { chapterId: string; title: string } }
   | { type: 'ChapterReordered'; payload: { orderedChapterIds: string[] } }
   | { type: 'ChapterDeleted';   payload: { chapterId: string } }
-  | { type: 'ChapterPromoted';  payload: { chapterId: string; title: string; boardBlockId: string } };
+  | { type: 'ChapterPromoted';    payload: { chapterId: string; title: string; boardBlockId: string } }
+  | { type: 'ChapterLockChanged'; payload: { chapterId: string; locked: boolean } };
 
 export type PersistedEvent = WritingEvent & {
   id: string;
@@ -397,6 +399,13 @@ function projectEvents(events: PersistedEvent[], base?: Projection): Projection 
       case 'ChapterPromoted': {
         const { chapterId, title, boardBlockId } = ev.payload;
         chapters.push({ id: chapterId, title, order: chapters.length, source: 'promoted', boardBlockId });
+        meta.updatedAt = ev.timestamp;
+        break;
+      }
+
+      case 'ChapterLockChanged': {
+        const ch = chapters.find(c => c.id === ev.payload.chapterId);
+        if (ch) { ch.locked = ev.payload.locked; }
         meta.updatedAt = ev.timestamp;
         break;
       }
