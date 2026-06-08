@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import TagInput from '../TagInput';
-import { appendEvent } from '../../api/planning';
-import type { Block, BlockColor, BlockStatus, Projection, Slot } from '../../types';
+import { appendEvent, getProjectEvents } from '../../api/planning';
+import type { Block, BlockColor, BlockStatus, PersistedEvent, Projection, Slot } from '../../types';
 
 const COLORS: BlockColor[] = ['amber', 'teal', 'coral', 'purple', 'blue'];
 const COLOR_HEX: Record<BlockColor, string> = {
@@ -11,6 +11,118 @@ const COLOR_HEX: Record<BlockColor, string> = {
 const STATUS_LABELS: Record<BlockStatus, string> = {
   active: 'active', hidden: 'hidden', parked: 'parked', archived: 'archived',
 };
+
+// ── History helpers ───────────────────────────────────────────────────────────
+
+type DiffLine = { kind: 'context' | 'add' | 'remove'; line: string };
+
+function lcs(a: string[], b: string[]): number[][] {
+  const m = a.length, n = b.length;
+  const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++)
+      dp[i][j] = a[i - 1] === b[j - 1] ? dp[i - 1][j - 1] + 1 : Math.max(dp[i - 1][j], dp[i][j - 1]);
+  return dp;
+}
+
+function computeLineDiff(before: string, after: string): DiffLine[] {
+  const a = before.split('\n');
+  const b = after.split('\n');
+  const dp = lcs(a, b);
+  const result: DiffLine[] = [];
+
+  function walk(i: number, j: number) {
+    if (i > 0 && j > 0 && a[i - 1] === b[j - 1]) {
+      walk(i - 1, j - 1);
+      result.push({ kind: 'context', line: a[i - 1] });
+    } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
+      walk(i, j - 1);
+      result.push({ kind: 'add', line: b[j - 1] });
+    } else if (i > 0) {
+      walk(i - 1, j);
+      result.push({ kind: 'remove', line: a[i - 1] });
+    }
+  }
+
+  walk(a.length, b.length);
+  return result;
+}
+
+function compactDiff(lines: DiffLine[], contextLines = 2): DiffLine[] {
+  const changed = new Set(lines.map((l, i) => l.kind !== 'context' ? i : -1).filter(i => i >= 0));
+  if (changed.size === 0) return [];
+  const keep = new Set<number>();
+  for (const idx of changed) {
+    for (let k = Math.max(0, idx - contextLines); k <= Math.min(lines.length - 1, idx + contextLines); k++) {
+      keep.add(k);
+    }
+  }
+  const compact: DiffLine[] = [];
+  let lastKept = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (!keep.has(i)) continue;
+    if (lastKept !== -1 && i > lastKept + 1) compact.push({ kind: 'context', line: '…' });
+    compact.push(lines[i]);
+    lastKept = i;
+  }
+  return compact;
+}
+
+interface HistoryItem {
+  id: string;
+  timestamp: string;
+  label: string;
+  prevNotes?: string;
+  nextNotes?: string;
+}
+
+function buildHistory(events: PersistedEvent[], blockId: string): HistoryItem[] {
+  const items: HistoryItem[] = [];
+  let prevNotes = '';
+
+  for (const ev of events) {
+    const p = ev.payload as Record<string, unknown>;
+    if (p.blockId !== blockId && ev.type !== 'BlockCreated') continue;
+
+    switch (ev.type) {
+      case 'BlockCreated':
+        if (p.blockId !== blockId) break;
+        items.push({ id: ev.id, timestamp: ev.timestamp, label: 'created' });
+        break;
+      case 'BlockUpdated': {
+        if (p.title !== undefined)
+          items.push({ id: ev.id, timestamp: ev.timestamp, label: `renamed to "${p.title}"` });
+        if (p.notes !== undefined) {
+          items.push({ id: ev.id, timestamp: ev.timestamp, label: 'notes updated', prevNotes, nextNotes: p.notes as string });
+          prevNotes = p.notes as string;
+        }
+        break;
+      }
+      case 'BlockMoved':
+        items.push({ id: ev.id, timestamp: ev.timestamp, label: `moved to ${p.toSlot}` });
+        break;
+      case 'BlockAssigned':
+        items.push({ id: ev.id, timestamp: ev.timestamp, label: `assigned to outline: ${p.toSlot}` });
+        break;
+      case 'BlockUnassigned':
+        items.push({ id: ev.id, timestamp: ev.timestamp, label: `removed from outline: ${p.fromSlot}` });
+        break;
+      case 'BlockPinned':
+        items.push({ id: ev.id, timestamp: ev.timestamp, label: 'pinned' });
+        break;
+      case 'BlockUnpinned':
+        items.push({ id: ev.id, timestamp: ev.timestamp, label: 'unpinned' });
+        break;
+      case 'BlockStatusChanged':
+        items.push({ id: ev.id, timestamp: ev.timestamp, label: `status → ${p.status}` });
+        break;
+    }
+  }
+
+  return items.reverse();
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 interface Props {
   block: Block;
@@ -31,6 +143,11 @@ export default function BlockDetailContent({ block, projection, projectId, onRef
   const savedNotes = useRef(block.notes ?? '');
   const savedLinks = useRef(block.links ?? []);
 
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyItems, setHistoryItems] = useState<HistoryItem[] | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [expandedDiffs, setExpandedDiffs] = useState<Set<string>>(new Set());
+
   // Track current field values in refs so the unmount cleanup can read them
   // without stale closure values (effect with [] deps only captures initial state).
   const currentTitle = useRef(title);
@@ -50,13 +167,6 @@ export default function BlockDetailContent({ block, projection, projectId, onRef
       }
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (block.title !== savedTitle.current) {
-      setTitle(block.title);
-      savedTitle.current = block.title;
-    }
-  }, [block.title]);
 
   const blockId = block.id;
   const boardSlots = projection.slots.filter((s: Slot) => s.area === 'board');
@@ -84,6 +194,7 @@ export default function BlockDetailContent({ block, projection, projectId, onRef
     if (notes === savedNotes.current) return;
     await appendEvent(projectId, { type: 'BlockUpdated', payload: { blockId, notes } });
     savedNotes.current = notes;
+    await onRefresh();
   }
 
   async function saveTags(newTags: string[]) {
@@ -141,6 +252,27 @@ export default function BlockDetailContent({ block, projection, projectId, onRef
       payload: { blockId, fromSlot: block.boardSlot, toSlot: slotId },
     });
     await onRefresh();
+  }
+
+  async function toggleHistory() {
+    if (!historyOpen && historyItems === null) {
+      setHistoryLoading(true);
+      try {
+        const all = await getProjectEvents(projectId);
+        setHistoryItems(buildHistory(all, blockId));
+      } finally {
+        setHistoryLoading(false);
+      }
+    }
+    setHistoryOpen(v => !v);
+  }
+
+  function toggleDiff(id: string) {
+    setExpandedDiffs(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
   }
 
   return (
@@ -295,6 +427,73 @@ export default function BlockDetailContent({ block, projection, projectId, onRef
             <span>created {new Date(block.createdAt).toLocaleDateString()}</span>
             <span>·</span>
             <span>updated {new Date(block.updatedAt).toLocaleDateString()}</span>
+          </div>
+
+          <div className="block-detail-section">
+            <button className="block-detail-history-toggle" onClick={toggleHistory}>
+              <i className={`ti ti-chevron-${historyOpen ? 'down' : 'right'} block-detail-history-chevron`} />
+              history
+              {historyLoading && <span className="block-detail-history-loading"> loading…</span>}
+            </button>
+
+            {historyOpen && historyItems !== null && (
+              <div className="block-detail-history-list">
+                {historyItems.length === 0 ? (
+                  <span className="block-detail-history-empty">no history yet</span>
+                ) : historyItems.map(item => {
+                  const hasDiff = item.prevNotes !== undefined && item.nextNotes !== undefined;
+                  const isExpanded = expandedDiffs.has(item.id);
+                  const diffLines = hasDiff && isExpanded
+                    ? compactDiff(computeLineDiff(item.prevNotes!, item.nextNotes!))
+                    : null;
+
+                  const rowContent = (
+                    <>
+                      <span className="block-detail-history-date">
+                        {new Date(item.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                        {' '}
+                        {new Date(item.timestamp).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      <span className="block-detail-history-label">{item.label}</span>
+                      {hasDiff && (
+                        <i className={`ti ti-chevron-${isExpanded ? 'up' : 'down'} block-detail-history-chevron-inline`} />
+                      )}
+                    </>
+                  );
+
+                  return (
+                    <div key={item.id} className="block-detail-history-item">
+                      {hasDiff ? (
+                        <button
+                          className="block-detail-history-row block-detail-history-row-btn"
+                          onClick={() => toggleDiff(item.id)}
+                          title={isExpanded ? 'Hide diff' : 'Show diff'}
+                        >
+                          {rowContent}
+                        </button>
+                      ) : (
+                        <div className="block-detail-history-row">{rowContent}</div>
+                      )}
+                      {diffLines && diffLines.length > 0 && (
+                        <div className="block-detail-history-diff">
+                          {diffLines.map((line, i) => (
+                            <div key={i} className={`block-detail-history-diff-${line.kind}`}>
+                              {line.kind === 'add' ? '+ ' : line.kind === 'remove' ? '− ' : '  '}
+                              {line.line || ' '}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {diffLines && diffLines.length === 0 && isExpanded && (
+                        <div className="block-detail-history-diff">
+                          <div className="block-detail-history-diff-context">  (no textual change)</div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </div>

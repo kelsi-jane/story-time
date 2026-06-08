@@ -2,7 +2,7 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/fu
 import { randomUUID } from 'crypto';
 import { isAdmin, getCallerUsername } from '../lib/table-client';
 import {
-  appendEvent, replayEvents, getUserIndex, updateUserIndex,
+  appendEvent, replayEvents, readEvents, getUserIndex, updateUserIndex,
   PersistedEvent, SlotArea,
 } from '../lib/event-store';
 
@@ -250,6 +250,19 @@ async function saveChapterDraft(request: HttpRequest, context: InvocationContext
   }
 }
 
+async function getProjectEvents(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+  if (!isAdmin(request)) return { status: 401, jsonBody: { message: 'Unauthorized' } };
+
+  const projectId = request.params.projectId;
+  try {
+    const { events } = await readEvents(projectId);
+    return { status: 200, jsonBody: { events } };
+  } catch (err: any) {
+    context.error('getProjectEvents error:', err);
+    return { status: 500, jsonBody: { message: 'Failed to load events' } };
+  }
+}
+
 // ── Registration ──────────────────────────────────────────────────────────────
 
 app.http('createProject', {
@@ -271,6 +284,13 @@ app.http('appendProjectEvent', {
   authLevel: 'anonymous',
   route: 'planning/projects/{projectId}/events',
   handler: appendProjectEvent,
+});
+
+app.http('getProjectEvents', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'planning/projects/{projectId}/events',
+  handler: getProjectEvents,
 });
 
 app.http('getProjection', {

@@ -1,4 +1,4 @@
-import type { ProjectListItem, Projection, WritingEvent } from '../types';
+import type { ProjectListItem, Projection, WritingEvent, PersistedEvent } from '../types';
 
 async function apiFetch(path: string, options?: RequestInit) {
   const res = await fetch(`/api/planning/${path}`, {
@@ -40,6 +40,11 @@ export async function appendEvent(
 
 export async function getProjection(projectId: string): Promise<Projection> {
   return apiFetch(`projects/${projectId}/projection`);
+}
+
+export async function getProjectEvents(projectId: string): Promise<PersistedEvent[]> {
+  const data = await apiFetch(`projects/${projectId}/events`);
+  return data.events ?? [];
 }
 
 export async function getChapterDraft(projectId: string, chapterId: string): Promise<string> {

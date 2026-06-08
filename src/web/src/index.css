@@ -3126,3 +3126,126 @@ a.chapter-row-title:hover {
   color: var(--color-text-secondary);
   opacity: 0.7;
 }
+
+.block-detail-history-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  padding: 0;
+}
+
+.block-detail-history-toggle:hover {
+  color: var(--color-text-primary);
+}
+
+.block-detail-history-chevron {
+  font-size: 11px;
+}
+
+.block-detail-history-loading {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  opacity: 0.6;
+}
+
+.block-detail-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 6px;
+  border-top: 1px solid var(--color-border);
+  margin-top: 4px;
+}
+
+.block-detail-history-empty {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  opacity: 0.5;
+}
+
+.block-detail-history-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.block-detail-history-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.block-detail-history-date {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 10px;
+  color: var(--color-text-secondary);
+  opacity: 0.55;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.block-detail-history-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  flex: 1;
+}
+
+.block-detail-history-row-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  padding: 2px 4px;
+  margin: 0 -4px;
+  border-radius: 3px;
+}
+
+.block-detail-history-row-btn:hover {
+  background: var(--color-surface);
+}
+
+.block-detail-history-chevron-inline {
+  font-size: 10px;
+  color: var(--color-text-secondary);
+  opacity: 0.5;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.block-detail-history-diff {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 10px;
+  line-height: 1.6;
+  padding: 6px 8px;
+  border-radius: 4px;
+  background: var(--color-surface);
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin-left: 12px;
+}
+
+.block-detail-history-diff-add {
+  color: #4a9a6b;
+}
+
+.block-detail-history-diff-remove {
+  color: #b85c5c;
+}
+
+.block-detail-history-diff-context {
+  color: var(--color-text-secondary);
+  opacity: 0.5;
+}
