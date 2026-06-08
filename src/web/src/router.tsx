@@ -16,6 +16,7 @@ import Story from './pages/author/Story';
 import Chapters from './pages/author/Chapters';
 import MarkdownGuide from './pages/author/MarkdownGuide';
 import BlockDetail from './pages/author/BlockDetail';
+import Notes from './pages/author/Notes';
 
 export const router = createBrowserRouter([
   {
@@ -37,6 +38,7 @@ export const router = createBrowserRouter([
       { path: '/author/projects/:projectId/story', element: <Story /> },
       { path: '/author/projects/:projectId/chapters', element: <Chapters /> },
       { path: '/author/markdown-guide', element: <MarkdownGuide /> },
+      { path: '/author/projects/:projectId/notes', element: <Notes /> },
       { path: '/author/projects/:projectId/blocks/:blockId', element: <BlockDetail /> },
       { path: '/teapot', element: <ErrorPage status={418} /> },
     ],

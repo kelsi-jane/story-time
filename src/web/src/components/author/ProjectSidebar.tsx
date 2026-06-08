@@ -1,3 +1,4 @@
+import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import type { ProjectMeta } from '../../types';
 import { getTemplate } from '../../data/templates';
@@ -13,12 +14,14 @@ interface NavItem {
   label: string;
   path?: (projectId: string) => string;
   exact?: boolean;
+  divider?: boolean;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { icon: 'ti-layout-board',    label: 'brainstorm', path: id => `/author/projects/${id}`,        exact: true  },
-  { icon: 'ti-list-details',    label: 'story',      path: id => `/author/projects/${id}/story`,  exact: false },
-  { icon: 'ti-book',            label: 'chapters',   path: id => `/author/projects/${id}/chapters`, exact: false },
+  { icon: 'ti-layout-board',    label: 'brainstorm', path: id => `/author/projects/${id}`,          exact: true  },
+  { icon: 'ti-list-details',    label: 'story',      path: id => `/author/projects/${id}/story`,    exact: false },
+  { icon: 'ti-book',            label: 'chapters',   path: id => `/author/projects/${id}/chapters`, exact: false, divider: true },
+  { icon: 'ti-notes',           label: 'notes',      path: id => `/author/projects/${id}/notes`,    exact: false },
   { icon: 'ti-users',           label: 'characters' },
   { icon: 'ti-map-pin',         label: 'locations'  },
   { icon: 'ti-git-branch',      label: 'history'    },
@@ -47,16 +50,21 @@ export default function ProjectSidebar({ meta, blockCount, collapsed }: Props) {
           const active = isActive(item);
           const href = item.path?.(meta.projectId);
           const className = `board-nav-item${active ? ' active' : !href ? ' disabled' : ''}`;
-          return href ? (
-            <Link key={item.label} to={href} className={className}>
-              <i className={`ti ${item.icon}`} />
-              {item.label}
-            </Link>
-          ) : (
-            <div key={item.label} className={className}>
-              <i className={`ti ${item.icon}`} />
-              {item.label}
-            </div>
+          return (
+            <React.Fragment key={item.label}>
+              {item.divider && <hr className="board-sidebar-divider" />}
+              {href ? (
+                <Link to={href} className={className}>
+                  <i className={`ti ${item.icon}`} />
+                  {item.label}
+                </Link>
+              ) : (
+                <div className={className}>
+                  <i className={`ti ${item.icon}`} />
+                  {item.label}
+                </div>
+              )}
+            </React.Fragment>
           );
         })}
       </nav>

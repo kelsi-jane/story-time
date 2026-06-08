@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import SiteBanner from '../../components/SiteBanner';
+import ProjectSidebar from '../../components/author/ProjectSidebar';
 import BlockDetailContent from '../../components/author/BlockDetailContent';
 import ChapterDetail from '../../components/author/ChapterDetail';
 import { getProjection, appendEvent } from '../../api/planning';
@@ -49,17 +50,11 @@ export default function BlockDetail() {
 
   const [projection, setProjection] = useState<Projection | null>(null);
   const [loading, setLoading] = useState(true);
-  const [navCollapsed, setNavCollapsed] = useState(() =>
-    localStorage.getItem(`block-detail-nav-collapsed-${projectId}`) === 'true'
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() =>
+    localStorage.getItem(`sidebar-collapsed-${projectId}`) === 'true'
   );
-  const [collapsedSlots, setCollapsedSlots] = useState<Set<string>>(() => {
-    try {
-      const stored = localStorage.getItem(`block-detail-collapsed-${projectId}`);
-      return stored ? new Set(JSON.parse(stored) as string[]) : new Set(['__board__']);
-    } catch {
-      return new Set(['__board__']);
-    }
-  });
+  const [switcherOpen, setSwitcherOpen] = useState(false);
+  const switcherRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
     if (!projectId) return;
@@ -70,13 +65,22 @@ export default function BlockDetail() {
 
   useEffect(() => { load(); }, [load]);
 
-  // Silently reload when switching between blocks so the projection stays
-  // fresh — necessary when notes were saved on the previous card.
   const initialBlockId = useRef(blockId);
   useEffect(() => {
     if (blockId === initialBlockId.current) return;
     load();
   }, [blockId, load]);
+
+  useEffect(() => { setSwitcherOpen(false); }, [blockId]);
+
+  useEffect(() => {
+    function onOutside(e: MouseEvent) {
+      if (switcherRef.current && !switcherRef.current.contains(e.target as Node))
+        setSwitcherOpen(false);
+    }
+    document.addEventListener('mousedown', onOutside);
+    return () => document.removeEventListener('mousedown', onOutside);
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -96,11 +100,10 @@ export default function BlockDetail() {
     navigate(`/author/projects/${projectId}/blocks/${newBlockId}`);
   }
 
-  function toggleSlotCollapsed(slotId: string) {
-    setCollapsedSlots(prev => {
-      const next = new Set(prev);
-      if (next.has(slotId)) next.delete(slotId); else next.add(slotId);
-      localStorage.setItem(`block-detail-collapsed-${projectId}`, JSON.stringify([...next]));
+  function toggleSidebar() {
+    setSidebarCollapsed(prev => {
+      const next = !prev;
+      localStorage.setItem(`sidebar-collapsed-${projectId}`, String(next));
       return next;
     });
   }
@@ -109,8 +112,8 @@ export default function BlockDetail() {
     return (
       <div className="board-page-shell">
         <SiteBanner />
-        <div className="block-detail-shell">
-          <p className="block-detail-loading">Loading…</p>
+        <div className="board-app">
+          <p style={{ padding: 24, fontSize: 13, color: 'var(--color-text-secondary)' }}>Loading…</p>
         </div>
       </div>
     );
@@ -123,13 +126,15 @@ export default function BlockDetail() {
     return (
       <div className="board-page-shell">
         <SiteBanner />
-        <div className="block-detail-shell">
-          <div className="content-missing">
-            <i className="ti ti-note-off content-missing-icon" />
-            <p className="content-missing-label">not found</p>
-            <p className="content-missing-heading">Note not found.</p>
-            <p className="content-missing-body">This note may have been deleted or the link is wrong.</p>
-            <Link to={`/author/projects/${projectId}`} className="btn btn-secondary content-missing-cta">← back to board</Link>
+        <div className="board-app">
+          <div className="board-main">
+            <div className="content-missing">
+              <i className="ti ti-note-off content-missing-icon" />
+              <p className="content-missing-label">not found</p>
+              <p className="content-missing-heading">Note not found.</p>
+              <p className="content-missing-body">This note may have been deleted or the link is wrong.</p>
+              <Link to={`/author/projects/${projectId}`} className="btn btn-secondary content-missing-cta">← back to board</Link>
+            </div>
           </div>
         </div>
       </div>
@@ -140,141 +145,116 @@ export default function BlockDetail() {
   const isChapterZoneNote = block.boardSlot === 'chapters' && !promotedChapter;
 
   const activeBlocks = projection.blocks.filter(b => b.status !== 'archived');
-  const outlineSlots = projection.slots.filter((s: Slot) => s.area === 'outline');
 
-  const outlineNavBlocks = new Map<string, Block[]>(outlineSlots.map(s => [s.id, []]));
-  const blocksInOutlineNav = new Set<string>();
-  for (const b of activeBlocks) {
-    if (outlineNavBlocks.has(b.slot)) {
-      outlineNavBlocks.get(b.slot)!.push(b);
-      blocksInOutlineNav.add(b.id);
-    }
-    for (const a of projection.outlineAssignments.filter(a => a.blockId === b.id)) {
-      if (outlineNavBlocks.has(a.slotId)) {
-        outlineNavBlocks.get(a.slotId)!.push(b);
-        blocksInOutlineNav.add(b.id);
-      }
-    }
-  }
-  const outlineNavGroups = outlineSlots
-    .map(s => ({ slot: s, blocks: outlineNavBlocks.get(s.id)! }))
+  const boardSlots = projection.slots.filter((s: Slot) => s.area === 'board');
+  const switcherGroups = boardSlots
+    .map(slot => ({
+      slot,
+      blocks: activeBlocks.filter(b => b.boardSlot === slot.id),
+    }))
     .filter(g => g.blocks.length > 0);
-  const onBoardBlocks = activeBlocks.filter(b => !blocksInOutlineNav.has(b.id));
 
   return (
     <div className="board-page-shell">
-    <SiteBanner />
-    <nav className="author-breadcrumb">
-      <Link to="/author" className="author-breadcrumb-link">Author Studio</Link>
-      <span className="author-breadcrumb-sep">/</span>
-      <Link to={`/author/projects/${projectId}`} className="author-breadcrumb-link">{projection.meta.title}</Link>
-      <span className="author-breadcrumb-sep">/</span>
-      <span className="author-breadcrumb-current">{block.title}</span>
-      <button className="author-breadcrumb-mobile-add" title="New note" onClick={handleNewBlock}>
-        <i className="ti ti-plus" />
-      </button>
-    </nav>
-    <div className="block-detail-shell">
-      <div className={`block-detail-nav${navCollapsed ? ' collapsed' : ''}`}>
-        <div className="block-detail-nav-header">
-          <div className="block-detail-nav-top">
-            <span className="block-detail-project-name">{projection.meta.title}</span>
-            <button className="block-detail-nav-add" title="Add note" onClick={handleNewBlock}>
-              <i className="ti ti-plus" />
+      <SiteBanner />
+      <div className="board-app">
+        <ProjectSidebar
+          meta={projection.meta}
+          blockCount={activeBlocks.length}
+          collapsed={sidebarCollapsed}
+        />
+        <button
+          className="board-sidebar-toggle"
+          onClick={toggleSidebar}
+          title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          <i className={`ti ti-chevron-${sidebarCollapsed ? 'right' : 'left'}`} />
+        </button>
+
+        <div className="board-main">
+          <div className="board-toolbar">
+            <nav className="board-toolbar-breadcrumb">
+              <Link to="/author" className="author-breadcrumb-link">Author Studio</Link>
+              <span className="author-breadcrumb-sep">/</span>
+              <Link to={`/author/projects/${projectId}`} className="author-breadcrumb-link">
+                {projection.meta.title}
+              </Link>
+              <span className="author-breadcrumb-sep">/</span>
+
+              <div className="block-detail-switcher-wrap" ref={switcherRef}>
+                <button
+                  className="author-breadcrumb-current block-detail-switcher-btn"
+                  onClick={() => setSwitcherOpen(v => !v)}
+                >
+                  {block.title}
+                  <i className="ti ti-chevron-down block-detail-switcher-chevron" />
+                </button>
+
+                {switcherOpen && (
+                  <div className="block-detail-slot-picker block-detail-switcher-picker">
+                    {switcherGroups.map(({ slot, blocks }) => (
+                      <React.Fragment key={slot.id}>
+                        <div className="block-detail-nav-group-label pane-picker-group">
+                          {slot.label}
+                          <span className="block-detail-nav-group-count">{blocks.length}</span>
+                        </div>
+                        {blocks.map(b => (
+                          <button
+                            key={b.id}
+                            className={`block-detail-slot-option${b.id === blockId ? ' selected' : ''}`}
+                            onClick={() => navigate(`/author/projects/${projectId}/blocks/${b.id}`)}
+                          >
+                            <span className={`block-detail-nav-dot sticky-${b.color}`} />
+                            {b.title}
+                            {b.pinned && <i className="ti ti-pin block-detail-nav-pin" />}
+                          </button>
+                        ))}
+                      </React.Fragment>
+                    ))}
+                    {switcherGroups.length === 0 && (
+                      <p className="story-notes-empty">No notes yet.</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </nav>
+            <div className="board-toolbar-divider" />
+            <button className="board-toolbar-btn" onClick={handleNewBlock} title="New note">
+              <i className="ti ti-plus" /> new note
             </button>
           </div>
-        </div>
 
-        <div className="block-detail-nav-list">
-          {onBoardBlocks.length > 0 && (
-            <div className="block-detail-nav-group">
-              <div className="block-detail-nav-group-label block-detail-nav-board-label" onClick={() => toggleSlotCollapsed('__board__')}>
-                <i className={`ti ti-chevron-${collapsedSlots.has('__board__') ? 'right' : 'down'} block-detail-nav-chevron`} />
-                on board
-                <span className="block-detail-nav-group-count">{onBoardBlocks.length}</span>
-              </div>
-              {!collapsedSlots.has('__board__') && onBoardBlocks.map(b => (
-                <div
-                  key={b.id}
-                  className={`block-detail-nav-item${b.id === blockId ? ' active' : ''}`}
-                  onClick={() => navigate(`/author/projects/${projectId}/blocks/${b.id}`)}
-                >
-                  <span className={`block-detail-nav-dot sticky-${b.color}`} />
-                  <span className="block-detail-nav-label">{b.title}</span>
-                  {b.pinned && <i className="ti ti-pin block-detail-nav-pin" />}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {outlineNavGroups.map(({ slot, blocks: groupBlocks }) => {
-            const isCollapsed = collapsedSlots.has(slot.id);
-            return (
-              <div key={slot.id} className="block-detail-nav-group">
-                <div className="block-detail-nav-group-label" onClick={() => toggleSlotCollapsed(slot.id)}>
-                  <i className={`ti ti-chevron-${isCollapsed ? 'right' : 'down'} block-detail-nav-chevron`} />
-                  {slot.label}
-                  <span className="block-detail-nav-group-count">{groupBlocks.length}</span>
-                </div>
-                {!isCollapsed && groupBlocks.map(b => (
-                  <div
-                    key={b.id}
-                    className={`block-detail-nav-item${b.id === blockId ? ' active' : ''}`}
-                    onClick={() => navigate(`/author/projects/${projectId}/blocks/${b.id}`)}
-                  >
-                    <span className={`block-detail-nav-dot sticky-${b.color}`} />
-                    <span className="block-detail-nav-label">{b.title}</span>
-                    {b.pinned && <i className="ti ti-pin block-detail-nav-pin" />}
-                  </div>
-                ))}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      <button
-        className="board-sidebar-toggle"
-        onClick={() => setNavCollapsed(v => {
-          const next = !v;
-          localStorage.setItem(`block-detail-nav-collapsed-${projectId}`, String(next));
-          return next;
-        })}
-        title={navCollapsed ? 'Expand panel' : 'Collapse panel'}
-      >
-        <i className={`ti ti-chevron-${navCollapsed ? 'right' : 'left'}`} />
-      </button>
-
-      {promotedChapter ? (
-        <ChapterDetail
-          key={promotedChapter.id}
-          block={block}
-          chapter={promotedChapter}
-          projection={projection}
-          projectId={projectId!}
-          onRefresh={load}
-          onNewBlock={handleNewBlock}
-        />
-      ) : (
-        <div className="chapter-detail-shell">
-          {isChapterZoneNote && (
-            <PromoteNudge
+          {promotedChapter ? (
+            <ChapterDetail
+              key={promotedChapter.id}
               block={block}
+              chapter={promotedChapter}
+              projection={projection}
               projectId={projectId!}
               onRefresh={load}
+              onNewBlock={handleNewBlock}
             />
+          ) : (
+            <div className="chapter-detail-shell">
+              {isChapterZoneNote && (
+                <PromoteNudge
+                  block={block}
+                  projectId={projectId!}
+                  onRefresh={load}
+                />
+              )}
+              <BlockDetailContent
+                key={block.id}
+                block={block}
+                projection={projection}
+                projectId={projectId!}
+                onRefresh={load}
+                onNewBlock={handleNewBlock}
+              />
+            </div>
           )}
-          <BlockDetailContent
-            key={block.id}
-            block={block}
-            projection={projection}
-            projectId={projectId!}
-            onRefresh={load}
-            onNewBlock={handleNewBlock}
-          />
         </div>
-      )}
-    </div>
+      </div>
     </div>
   );
 }
