@@ -121,7 +121,7 @@ async function streamToString(stream: NodeJS.ReadableStream): Promise<string> {
 
 // ── Event log ─────────────────────────────────────────────────────────────────
 
-async function readEvents(projectId: string): Promise<{ events: PersistedEvent[]; etag: string | undefined }> {
+export async function readEvents(projectId: string): Promise<{ events: PersistedEvent[]; etag: string | undefined }> {
   const blob = await getBlob(`projects/${projectId}/events.json`);
   try {
     const download = await blob.download();

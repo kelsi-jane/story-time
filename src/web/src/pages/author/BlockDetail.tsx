@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import SiteBanner from '../../components/SiteBanner';
 import BlockDetailContent from '../../components/author/BlockDetailContent';
@@ -69,6 +69,14 @@ export default function BlockDetail() {
   }, [projectId]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Silently reload when switching between blocks so the projection stays
+  // fresh — necessary when notes were saved on the previous card.
+  const initialBlockId = useRef(blockId);
+  useEffect(() => {
+    if (blockId === initialBlockId.current) return;
+    load();
+  }, [blockId, load]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -239,6 +247,7 @@ export default function BlockDetail() {
 
       {promotedChapter ? (
         <ChapterDetail
+          key={promotedChapter.id}
           block={block}
           chapter={promotedChapter}
           projection={projection}
@@ -256,6 +265,7 @@ export default function BlockDetail() {
             />
           )}
           <BlockDetailContent
+            key={block.id}
             block={block}
             projection={projection}
             projectId={projectId!}
