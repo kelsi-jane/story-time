@@ -35,6 +35,10 @@ a:hover {
 
 /* Prose body — chapter reading surface */
 .prose {
+  display: flow-root; /* contain floated artifacts */
+}
+
+.page-card .prose {
   user-select: none;
   -webkit-user-select: none;
 }

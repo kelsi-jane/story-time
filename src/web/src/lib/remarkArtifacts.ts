@@ -17,11 +17,20 @@ import type { Root } from 'mdast';
 //   font    font-family           :::letter{font="monospace"}
 //
 // Data attributes (ATTR_TO_DATA) — read by CSS via attr() for content / selectors:
-//   torn    torn edges (clipping)  :::clipping{torn}
-//   date    dateline (clipping)    :::clipping{date="March 14, 1923"}
+//   torn      torn edges (clipping)      :::clipping{torn}
+//   date      dateline (clipping)        :::clipping{date="March 14, 1923"}
+//   wrap      float text around artifact :::photo{wrap="left"} / wrap="right"
+//   noborder  remove photo border/shadow :::photo{noborder}
 //
 // Adding a CSS var: entry in ATTR_TO_VAR + var() fallback in artifacts.css.
 // Adding a data attr: entry in ATTR_TO_DATA + [data-x] selector in artifacts.css.
+//
+// SMS bubble directives — leaf directives used only inside :::sms containers.
+// These bypass the artifact class and get their own bubble classes instead.
+//   ::them[message text]    left bubble (other person)
+//   ::me[message text]      right bubble (protagonist)
+
+const SMS_BUBBLES = new Set(['them', 'me']);
 
 const ATTR_TO_VAR: Record<string, string> = {
   bg:   '--artifact-bg',
@@ -31,8 +40,11 @@ const ATTR_TO_VAR: Record<string, string> = {
 };
 
 const ATTR_TO_DATA: Record<string, string> = {
-  torn: 'data-torn',
-  date: 'data-date',
+  torn:     'data-torn',
+  date:     'data-date',
+  wrap:     'data-wrap',
+  noborder: 'data-noborder',
+  fade:     'data-fade',
 };
 
 export default function remarkArtifacts() {
@@ -40,6 +52,12 @@ export default function remarkArtifacts() {
     visit(tree, (node: any) => {
       if (node.type !== 'containerDirective' && node.type !== 'leafDirective') return;
       if (!node.data) node.data = {};
+
+      if (SMS_BUBBLES.has(node.name)) {
+        node.data.hName = 'div';
+        node.data.hProperties = { class: `sms-bubble sms-${node.name}` };
+        return;
+      }
 
       const attrs = node.attributes ?? {};
 

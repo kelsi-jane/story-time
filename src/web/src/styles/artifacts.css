@@ -12,7 +12,7 @@
  *   2. Document the name in the list above.
  *
  * Available types:
- *   sticky-note   handwritten   letter   telegram   clipping
+ *   sticky-note   handwritten   letter   telegram   clipping   photo   sms
  * ───────────────────────────────────────────────────────────────────────────
  */
 
@@ -141,6 +141,139 @@
   text-transform: uppercase;
   color: #8a7a50;
   column-span: all;
+}
+
+/* ── photo ────────────────────────────────────────────────────────────────── */
+
+.artifact-photo {
+  max-width: 300px;
+  background: var(--artifact-bg, #ffffff);
+  padding: 12px 12px 36px;
+  box-shadow: 2px 5px 20px rgba(0, 0, 0, 0.22);
+  transform: rotate(var(--artifact-tilt, 0deg));
+}
+
+.artifact-photo img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: none;
+  object-fit: initial;
+  border-radius: 0;
+  margin: 0;
+}
+
+.artifact-photo p {
+  margin: 0;
+  line-height: 0;
+}
+
+.artifact-photo p + p {
+  margin-top: 10px;
+  font-family: var(--artifact-font, 'Caveat', cursive);
+  font-size: 15px;
+  color: #888;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.artifact-photo[data-noborder] {
+  background: none;
+  padding: 0;
+  box-shadow: none;
+}
+
+/* ── text wrap ────────────────────────────────────────────────────────────── */
+
+.artifact[data-wrap="left"] {
+  float: left;
+  margin: 0.5em 2.5em 1em 0;
+}
+
+.artifact[data-wrap="right"] {
+  float: right;
+  margin: 0.5em 0 1em 2.5em;
+}
+
+/* ── sms ─────────────────────────────────────────────────────────────────── */
+
+/* Phone frame: thick dark border + light screen background */
+.artifact-sms {
+  max-width: 280px;
+  aspect-ratio: 9 / 19.5; /* iPhone body proportion — grows beyond this if content overflows */
+  background: #f2f2f7;
+  padding: 8px 10px 12px;
+  border: 14px solid #1c1c1e;
+  border-top-width: 52px;
+  border-bottom-width: 52px;
+  border-radius: 46px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.32), 0 2px 8px rgba(0, 0, 0, 0.16);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Dynamic Island pill */
+.artifact-sms::before {
+  content: '';
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 92px;
+  height: 28px;
+  background: #000;
+  border-radius: 20px;
+}
+
+/* Home indicator bar */
+.artifact-sms::after {
+  content: '';
+  position: absolute;
+  bottom: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 110px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+/* Fade — masks the phone from one edge, suggesting a longer conversation */
+/* fade="top":    top edge disappears, bottom content is focal point */
+.artifact-sms[data-fade="top"] {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 55%);
+  mask-image: linear-gradient(to bottom, transparent 0%, black 55%);
+}
+
+/* fade="bottom": bottom edge disappears, top content is focal point */
+.artifact-sms[data-fade="bottom"] {
+  -webkit-mask-image: linear-gradient(to top, transparent 0%, black 55%);
+  mask-image: linear-gradient(to top, transparent 0%, black 55%);
+}
+
+/* Message bubbles */
+.sms-bubble {
+  max-width: 76%;
+  padding: 8px 12px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.sms-them {
+  align-self: flex-start;
+  background: #e5e5ea;
+  color: #1c1c1e;
+  border-bottom-left-radius: 4px;
+}
+
+.sms-me {
+  align-self: flex-end;
+  background: var(--color-primary, #007aff);
+  color: #ffffff;
+  border-bottom-right-radius: 4px;
 }
 
 /* torn — scalloped mask on top and bottom edges */
