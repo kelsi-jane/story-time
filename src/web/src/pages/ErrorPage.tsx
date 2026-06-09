@@ -69,7 +69,7 @@ export function ErrorPage({ status = 500 }: { status?: number }) {
             try again
           </button>
         ) : (
-          <Link to="/" className="btn btn-secondary error-cta">
+          <Link to="/content" className="btn btn-secondary error-cta">
             ← back to stories
           </Link>
         )}

@@ -57,7 +57,7 @@ export default function StoryTitle() {
               : "Something interrupted us on the way here. Give it a moment and try again."}
           </p>
           {isNotFound
-            ? <Link to="/" className="btn btn-secondary error-cta">← back to stories</Link>
+            ? <Link to="/content" className="btn btn-secondary error-cta">← back to stories</Link>
             : <button className="btn btn-secondary error-cta" onClick={() => window.location.reload()}>try again</button>
           }
         </div>
@@ -74,7 +74,7 @@ export default function StoryTitle() {
     <SiteBanner />
     <div style={styles.page}>
       <nav style={styles.breadcrumb}>
-        <Link to="/" style={styles.breadcrumbLink}>Home</Link>
+        <Link to="/content" style={styles.breadcrumbLink}>Stories</Link>
         <span style={styles.breadcrumbSep}>›</span>
         <span style={styles.breadcrumbCurrent}>{story.title}{story.subtitle ? `: ${story.subtitle}` : ''}</span>
       </nav>

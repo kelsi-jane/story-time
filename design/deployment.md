@@ -113,6 +113,8 @@ az storage account show-connection-string \
   --output tsv
 ```
 
+> **Important:** Always use `az storage account show-connection-string` to obtain this value — do not copy the connection string from the Azure portal. The CLI output includes all required endpoint fields (`TableEndpoint`, `BlobEndpoint`, `QueueEndpoint`, `FileEndpoint`). The portal often omits these, producing a malformed string that causes `ENOTFOUND` DNS errors at runtime.
+
 ### 2. Create the Azure Static Web App
 
 ```bash

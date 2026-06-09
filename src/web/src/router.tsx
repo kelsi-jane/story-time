@@ -1,5 +1,6 @@
 import { createBrowserRouter } from 'react-router-dom';
 import Discovery from './pages/reader/Discovery';
+import LandingPage from './pages/LandingPage';
 import StoryTitle from './pages/reader/StoryTitle';
 import Chapter from './pages/reader/Chapter';
 import { ErrorPage } from './pages/ErrorPage';
@@ -22,7 +23,8 @@ export const router = createBrowserRouter([
   {
     errorElement: <RouteErrorPage />,
     children: [
-      { path: '/', element: <Discovery /> },
+      { path: '/', element: <LandingPage /> },
+      { path: '/content', element: <Discovery /> },
       { path: '/stories/:slug', element: <StoryTitle /> },
       { path: '/stories/:slug/chapters/:chapterId', element: <Chapter /> },
       { path: '/unauthorized', element: <ErrorPage status={403} /> },
