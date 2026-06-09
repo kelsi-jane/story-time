@@ -60,7 +60,7 @@ export default function Settings() {
     <SiteBanner />
     <div style={styles.page}>
       <nav style={styles.nav}>
-        <Link to="/" style={styles.back}>Home</Link>
+        <Link to="/content" style={styles.back}>Stories</Link>
         <span style={styles.breadcrumbSep}>›</span>
         <span style={styles.breadcrumbCurrent}>Reading Preferences</span>
       </nav>
