@@ -82,7 +82,9 @@ async function getStories(request: HttpRequest, context: InvocationContext): Pro
 }
 
 async function createStory(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-  if (!isAdmin(request)) return { status: 401, jsonBody: { message: 'Unauthorized' } };
+  if (!isAdmin(request)) {
+    return { status: 401, jsonBody: { message: 'Unauthorized' } };
+  }
   try {
     const data = await request.json() as Partial<Story>;
     const id = crypto.randomUUID();

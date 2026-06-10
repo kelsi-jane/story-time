@@ -23,6 +23,6 @@ export function isAdmin(request: HttpRequest): boolean {
   if (isDev) return true;
   const caller = getCallerUsername(request);
   if (!caller) return false;
-  const admins = (process.env.VITE_INITIAL_ADMIN_USERNAMES ?? '').split(',').map((u) => u.trim());
-  return admins.includes(caller);
+  const admins = (process.env.VITE_INITIAL_ADMIN_USERNAMES ?? '').split(',').map((u) => u.trim().toLowerCase());
+  return admins.includes(caller.toLowerCase());
 }

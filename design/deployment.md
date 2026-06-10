@@ -143,6 +143,8 @@ The CLI will prompt for GitHub authorisation and automatically create the GitHub
 
 ### 4. Set application settings
 
+All environment variables — including `VITE_*` build-time variables — must be set directly on the SWA resource via the Azure CLI. Do not rely on GitHub Actions variables for these; the SWA deploy action injects app settings into the build environment automatically, making them available to Vite at build time.
+
 ```bash
 az staticwebapp appsettings set \
   --name story-time \
@@ -150,18 +152,51 @@ az staticwebapp appsettings set \
   --setting-names \
     GITHUB_CLIENT_ID="<your-client-id>" \
     GITHUB_CLIENT_SECRET="<your-client-secret>" \
-    AZURE_STORAGE_CONNECTION_STRING="<your-connection-string>"
+    AZURE_STORAGE_CONNECTION_STRING="<your-connection-string>" \
+    VITE_INITIAL_ADMIN_USERNAMES="<comma-separated-github-usernames>" \
+    VITE_SITE_NAME="<your-site-name>" \
+    VITE_SITE_TAGLINE="<your-tagline>"
 ```
 
-### 5. Deploy
+`APPLICATIONINSIGHTS_CONNECTION_STRING` is optional but recommended — it enables function invocation logs viewable in Azure Portal:
+
+```bash
+az staticwebapp appsettings set \
+  --name story-time \
+  --resource-group story-time-rg \
+  --setting-names \
+    APPLICATIONINSIGHTS_CONNECTION_STRING="<your-connection-string>"
+```
+
+### 5. Assign `administrator` / `author` roles
+
+> **Edge case:** This step must be repeated for **every new SWA resource**. Role assignments do not transfer when you create a new Static Web App (e.g. spinning up a second instance for testing) — each instance has its own independent role table.
+
+`staticwebapp.config.json` restricts hard-navigation (full page load / refresh) to:
+- `/admin/*` — requires the `administrator` role
+- `/author/*` — requires the `author` role
+
+The `isAuthor` check in `src/web/src/context/AuthContext.tsx` also reads `userRoles` from `/.auth/me`, so a user without the `author` role will not see author-only UI even if they're in `VITE_INITIAL_ADMIN_USERNAMES`.
+
+These roles are **not** derived from `VITE_INITIAL_ADMIN_USERNAMES` — that variable only drives the separate, whitelist-based `isAdmin` check used by the API (e.g. `POST /stories`). The `administrator`/`author` roles come exclusively from SWA's built-in role system and must be assigned manually per instance:
+
+1. In the Azure Portal, open the Static Web App resource
+2. Go to **Role management** → **Invite**
+3. Set the **Domain** to your SWA hostname, select role(s) `administrator` and/or `author`, and generate an invite link
+4. Open the invite link (while signed in as the target GitHub user) and accept — this adds the role(s) to that user's `userRoles` for this SWA instance only
+
+Confirm by visiting `/.auth/me` while logged in — `userRoles` should include `administrator` and/or `author` in addition to `anonymous` and `authenticated`.
+
+### 6. Deploy
 
 Push to `main`. GitHub Actions picks it up automatically:
 
-### 6. Verify
+### 7. Verify
 
 - Visit `https://<your-swa-hostname>.azurestaticapps.net` — reader surfaces should load
 - Visit `/admin` — should redirect to GitHub OAuth login
 - Authenticate and confirm the admin index loads
+- Confirm `/.auth/me` shows the expected `userRoles` (see step 5)
 
 ---
 
@@ -181,15 +216,18 @@ Push to `main`. GitHub Actions picks it up automatically:
 
 `VITE_*` variables are build-time — Vite bakes them into the JS bundle during the GitHub Actions build. They are publicly readable in the bundle and must never contain secrets. See `design/security-concerns.md` for the full classification.
 
-| Variable | Type | Where set | Purpose |
+| Variable | Required | Where set | Purpose |
 |---|---|---|---|
-| `VITE_DEV_AUTH_USERNAME` | Build-time | `.env.local` only | Mocks authenticated GitHub user in local dev |
-| `VITE_INITIAL_ADMIN_USERNAMES` | Build-time | SWA app settings + `.env.local` | Comma-separated GitHub usernames seeded as admins; first is primary |
-| `GITHUB_CLIENT_ID` | Build-time | SWA app settings | GitHub OAuth app client ID |
-| `GITHUB_CLIENT_SECRET` | Runtime, **secret** | GitHub Secrets → workflow `env:` | GitHub OAuth app client secret |
-| `AZURE_STORAGE_CONNECTION_STRING` | Runtime, **secret** | GitHub Secrets → workflow `env:` | Blob + Table Storage access |
+| `GITHUB_CLIENT_ID` | Yes | SWA app settings | GitHub OAuth app client ID |
+| `GITHUB_CLIENT_SECRET` | Yes | SWA app settings | GitHub OAuth app client secret |
+| `AZURE_STORAGE_CONNECTION_STRING` | Yes | SWA app settings | Blob + Table Storage access — use `az storage account show-connection-string`, never the portal |
+| `VITE_INITIAL_ADMIN_USERNAMES` | Yes | SWA app settings + `.env.local` | Comma-separated GitHub usernames with admin access; without this no one can log in to admin |
+| `VITE_SITE_NAME` | Yes | SWA app settings + `.env.local` | Display name shown on the landing page |
+| `VITE_SITE_TAGLINE` | Yes | SWA app settings + `.env.local` | One-line description shown under the site name |
+| `APPLICATIONINSIGHTS_CONNECTION_STRING` | No | SWA app settings | Enables function invocation logs in Azure Portal |
+| `VITE_DEV_AUTH_USERNAME` | Local only | `.env.local` only | Mocks authenticated GitHub user in local dev |
 | `AzureWebJobsStorage` | Local only | `local.settings.json` | Functions local storage binding |
-| `AZURE_STATIC_WEB_APPS_API_TOKEN_*` | CI/CD | GitHub repository secret | SWA deployment token |
+| `AZURE_STATIC_WEB_APPS_API_TOKEN_*` | CI/CD | GitHub repository secret | SWA deployment token — created automatically by `az staticwebapp create` |
 
 ---
 
