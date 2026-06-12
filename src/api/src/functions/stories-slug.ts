@@ -1,5 +1,6 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
-import { getTableClient, isAdmin } from '../lib/table-client';
+import { isAdmin } from '../lib/table-client';
+import { getDocumentStore } from '../lib/storage';
 import { getChaptersForStory } from './stories';
 
 interface Chapter {
@@ -45,7 +46,7 @@ function entityToStory(e: Record<string, unknown>, chapters: Chapter[]): Story {
 async function getStory(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
   const slug = request.params.slug;
   try {
-    const entity = await getTableClient('Stories').getEntity<Record<string, unknown>>('story', slug);
+    const entity = await getDocumentStore().get<Record<string, unknown>>('Stories', 'story', slug);
     const chapters = await getChaptersForStory(slug);
     return { status: 200, jsonBody: entityToStory(entity, chapters) };
   } catch (err: unknown) {
@@ -62,8 +63,8 @@ async function updateStory(request: HttpRequest, context: InvocationContext): Pr
   const slug = request.params.slug;
   try {
     const data = await request.json() as Partial<Story>;
-    const client = getTableClient('Stories');
-    const existing = await client.getEntity<Record<string, unknown>>('story', slug);
+    const store = getDocumentStore();
+    const existing = await store.get<Record<string, unknown>>('Stories', 'story', slug);
     const updated = {
       partitionKey: 'story',
       rowKey: slug,
@@ -78,7 +79,7 @@ async function updateStory(request: HttpRequest, context: InvocationContext): Pr
       publishedAt: data.publishedAt !== undefined ? (data.publishedAt ?? '') : (existing.publishedAt ?? ''),
       coverImageUrl: data.coverImageUrl ?? existing.coverImageUrl ?? '',
     };
-    await client.updateEntity(updated, 'Replace');
+    await store.update('Stories', updated, 'Replace');
     const chapters = await getChaptersForStory(slug);
     return { status: 200, jsonBody: entityToStory(updated, chapters) };
   } catch (err: unknown) {
@@ -94,21 +95,18 @@ async function deleteStory(request: HttpRequest, context: InvocationContext): Pr
   if (!isAdmin(request)) return { status: 401, jsonBody: { message: 'Unauthorized' } };
   const slug = request.params.slug;
   try {
-    const storiesClient = getTableClient('Stories');
-    const chaptersClient = getTableClient('Chapters');
+    const store = getDocumentStore();
 
     // Delete all chapter entities for this story
     const chapters: { rowKey: string }[] = [];
-    for await (const entity of chaptersClient.listEntities<Record<string, unknown>>({
-      queryOptions: { filter: `PartitionKey eq '${slug}'` },
-    })) {
+    for await (const entity of store.list<Record<string, unknown>>('Chapters', slug)) {
       chapters.push({ rowKey: entity.rowKey as string });
     }
     for (const ch of chapters) {
-      await chaptersClient.deleteEntity(slug, ch.rowKey);
+      await store.delete('Chapters', slug, ch.rowKey);
     }
 
-    await storiesClient.deleteEntity('story', slug);
+    await store.delete('Stories', 'story', slug);
     return { status: 200, jsonBody: { ok: true } };
   } catch (err: unknown) {
     if ((err as { statusCode?: number }).statusCode === 404) {

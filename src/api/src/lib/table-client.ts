@@ -1,11 +1,4 @@
-import { TableClient } from '@azure/data-tables';
 import { HttpRequest } from '@azure/functions';
-
-export function getTableClient(table: string): TableClient {
-  const connStr = process.env.AZURE_STORAGE_CONNECTION_STRING;
-  if (!connStr) throw new Error('AZURE_STORAGE_CONNECTION_STRING not set');
-  return TableClient.fromConnectionString(connStr, table);
-}
 
 const isDev = process.env.AZURE_FUNCTIONS_ENVIRONMENT === 'Development';
 

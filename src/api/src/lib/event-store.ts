@@ -1,4 +1,4 @@
-import { BlobServiceClient, BlockBlobClient } from '@azure/storage-blob';
+import { getBlobStore } from './storage';
 
 // ── Types (mirrored from web/src/types.ts — keep in sync) ────────────────────
 
@@ -97,41 +97,12 @@ export type PersistedEvent = WritingEvent & {
   note?: string;
 };
 
-// ── Container ─────────────────────────────────────────────────────────────────
-
-function getContainer() {
-  const connStr = process.env.AZURE_STORAGE_CONNECTION_STRING;
-  if (!connStr) throw new Error('AZURE_STORAGE_CONNECTION_STRING not set');
-  return BlobServiceClient.fromConnectionString(connStr).getContainerClient('planning-data');
-}
-
-async function getBlob(path: string): Promise<BlockBlobClient> {
-  const container = getContainer();
-  await container.createIfNotExists();
-  return container.getBlockBlobClient(path);
-}
-
-async function streamToString(stream: NodeJS.ReadableStream): Promise<string> {
-  const chunks: Buffer[] = [];
-  for await (const chunk of stream) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-  }
-  return Buffer.concat(chunks).toString('utf-8');
-}
-
 // ── Event log ─────────────────────────────────────────────────────────────────
 
 export async function readEvents(projectId: string): Promise<{ events: PersistedEvent[]; etag: string | undefined }> {
-  const blob = await getBlob(`projects/${projectId}/events.json`);
-  try {
-    const download = await blob.download();
-    const etag = download.etag;
-    const text = await streamToString(download.readableStreamBody!);
-    return { events: JSON.parse(text) as PersistedEvent[], etag };
-  } catch (err: any) {
-    if (err.statusCode === 404) return { events: [], etag: undefined };
-    throw err;
-  }
+  const result = await getBlobStore().read('planning-data', `projects/${projectId}/events.json`);
+  if (!result) return { events: [], etag: undefined };
+  return { events: JSON.parse(result.content) as PersistedEvent[], etag: result.etag };
 }
 
 export async function appendEvent(projectId: string, event: PersistedEvent): Promise<void> {
@@ -140,12 +111,14 @@ export async function appendEvent(projectId: string, event: PersistedEvent): Pro
     const { events, etag } = await readEvents(projectId);
     events.push(event);
     const body = JSON.stringify(events, null, 2);
-    const blob = await getBlob(`projects/${projectId}/events.json`);
     try {
-      await blob.upload(body, Buffer.byteLength(body, 'utf-8'), {
-        blobHTTPHeaders: { blobContentType: 'application/json; charset=utf-8' },
-        conditions: etag ? { ifMatch: etag } : { ifNoneMatch: '*' },
-      });
+      await getBlobStore().write(
+        'planning-data',
+        `projects/${projectId}/events.json`,
+        body,
+        'application/json; charset=utf-8',
+        etag ? { ifMatch: etag } : { ifNoneMatch: '*' },
+      );
       return;
     } catch (err: any) {
       if (err.statusCode === 412 && attempt < MAX_RETRIES - 1) continue;
@@ -189,10 +162,9 @@ function migrateSnapshot(snapshot: Snapshot): Snapshot | null {
 
 async function readSnapshot(projectId: string): Promise<Snapshot | null> {
   try {
-    const blob = await getBlob(`projects/${projectId}/snapshot.json`);
-    const download = await blob.download();
-    const text = await streamToString(download.readableStreamBody!);
-    return migrateSnapshot(JSON.parse(text) as Snapshot);
+    const result = await getBlobStore().read('planning-data', `projects/${projectId}/snapshot.json`);
+    if (!result) return null;
+    return migrateSnapshot(JSON.parse(result.content) as Snapshot);
   } catch {
     return null;
   }
@@ -200,12 +172,8 @@ async function readSnapshot(projectId: string): Promise<Snapshot | null> {
 
 async function writeSnapshot(projectId: string, projection: Projection, eventCount: number): Promise<void> {
   try {
-    const blob = await getBlob(`projects/${projectId}/snapshot.json`);
     const body = JSON.stringify({ projection, eventCount });
-    await blob.upload(body, Buffer.byteLength(body, 'utf-8'), {
-      blobHTTPHeaders: { blobContentType: 'application/json; charset=utf-8' },
-      conditions: {},
-    });
+    await getBlobStore().write('planning-data', `projects/${projectId}/snapshot.json`, body, 'application/json; charset=utf-8');
   } catch {
     // snapshot write failure is non-fatal — next request replays from events
   }
@@ -437,15 +405,8 @@ export async function replayEvents(projectId: string): Promise<Projection> {
 // ── User index ────────────────────────────────────────────────────────────────
 
 export async function getUserIndex(username: string): Promise<ProjectListItem[]> {
-  const blob = await getBlob(`users/${username}/index.json`);
-  try {
-    const download = await blob.download();
-    const text = await streamToString(download.readableStreamBody!);
-    return JSON.parse(text) as ProjectListItem[];
-  } catch (err: any) {
-    if (err.statusCode === 404) return [];
-    throw err;
-  }
+  const result = await getBlobStore().read('planning-data', `users/${username}/index.json`);
+  return result ? (JSON.parse(result.content) as ProjectListItem[]) : [];
 }
 
 export async function updateUserIndex(
@@ -453,24 +414,21 @@ export async function updateUserIndex(
   updater: (items: ProjectListItem[]) => ProjectListItem[],
 ): Promise<void> {
   const MAX_RETRIES = 3;
+  const store = getBlobStore();
+  const path = `users/${username}/index.json`;
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-    const blob = await getBlob(`users/${username}/index.json`);
-    let current: ProjectListItem[] = [];
-    let etag: string | undefined;
-    try {
-      const download = await blob.download();
-      etag = download.etag;
-      current = JSON.parse(await streamToString(download.readableStreamBody!));
-    } catch (err: any) {
-      if (err.statusCode !== 404) throw err;
-    }
+    const result = await store.read('planning-data', path);
+    const current: ProjectListItem[] = result ? (JSON.parse(result.content) as ProjectListItem[]) : [];
     const updated = updater(current);
     const body = JSON.stringify(updated, null, 2);
     try {
-      await blob.upload(body, Buffer.byteLength(body, 'utf-8'), {
-        blobHTTPHeaders: { blobContentType: 'application/json; charset=utf-8' },
-        conditions: etag ? { ifMatch: etag } : { ifNoneMatch: '*' },
-      });
+      await store.write(
+        'planning-data',
+        path,
+        body,
+        'application/json; charset=utf-8',
+        result?.etag ? { ifMatch: result.etag } : { ifNoneMatch: '*' },
+      );
       return;
     } catch (err: any) {
       if (err.statusCode === 412 && attempt < MAX_RETRIES - 1) continue;
