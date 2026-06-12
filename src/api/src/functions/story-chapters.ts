@@ -1,5 +1,6 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
-import { getTableClient, isAdmin } from '../lib/table-client';
+import { isAdmin } from '../lib/table-client';
+import { getDocumentStore } from '../lib/storage';
 
 interface Chapter {
   id: string;
@@ -32,7 +33,7 @@ async function createChapter(request: HttpRequest, context: InvocationContext): 
       order: data.order ?? 0,
       blobPath: data.blobPath ?? '',
     };
-    await getTableClient('Chapters').createEntity(entity);
+    await getDocumentStore().create('Chapters', entity);
     return { status: 201, jsonBody: entityToChapter(entity) };
   } catch (err: unknown) {
     context.error('createChapter error:', err);
@@ -45,8 +46,8 @@ async function updateChapter(request: HttpRequest, context: InvocationContext): 
   const { slug, id } = request.params;
   try {
     const data = await request.json() as Partial<Chapter>;
-    const client = getTableClient('Chapters');
-    const existing = await client.getEntity<Record<string, unknown>>(slug, id);
+    const store = getDocumentStore();
+    const existing = await store.get<Record<string, unknown>>('Chapters', slug, id);
     const updated = {
       partitionKey: slug,
       rowKey: id,
@@ -55,7 +56,7 @@ async function updateChapter(request: HttpRequest, context: InvocationContext): 
       order: data.order ?? (existing.order as number),
       blobPath: data.blobPath ?? (existing.blobPath as string),
     };
-    await client.updateEntity(updated, 'Replace');
+    await store.update('Chapters', updated, 'Replace');
     return { status: 200, jsonBody: entityToChapter(updated) };
   } catch (err: unknown) {
     if ((err as { statusCode?: number }).statusCode === 404) {
@@ -70,7 +71,7 @@ async function deleteChapter(request: HttpRequest, context: InvocationContext): 
   if (!isAdmin(request)) return { status: 401, jsonBody: { message: 'Unauthorized' } };
   const { slug, id } = request.params;
   try {
-    await getTableClient('Chapters').deleteEntity(slug, id);
+    await getDocumentStore().delete('Chapters', slug, id);
     return { status: 200, jsonBody: { ok: true } };
   } catch (err: unknown) {
     if ((err as { statusCode?: number }).statusCode === 404) {
@@ -86,11 +87,12 @@ async function reorderChapters(request: HttpRequest, context: InvocationContext)
   const slug = request.params.slug;
   try {
     const { orderedIds } = await request.json() as { orderedIds: string[] };
-    const client = getTableClient('Chapters');
+    const store = getDocumentStore();
     for (let i = 0; i < orderedIds.length; i++) {
       const id = orderedIds[i];
-      const existing = await client.getEntity<Record<string, unknown>>(slug, id);
-      await client.updateEntity(
+      const existing = await store.get<Record<string, unknown>>('Chapters', slug, id);
+      await store.update(
+        'Chapters',
         { ...existing, partitionKey: slug, rowKey: id, order: i + 1 },
         'Merge',
       );

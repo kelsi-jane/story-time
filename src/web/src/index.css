@@ -3310,3 +3310,70 @@ a.chapter-row-title:hover {
   color: var(--color-text-secondary);
   opacity: 0.5;
 }
+
+/* ── Landing page ─────────────────────────────────────────────────────── */
+
+.landing-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-background);
+  padding: 24px;
+}
+
+.landing-main {
+  max-width: 480px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.landing-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.landing-site-name {
+  font-size: 28px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+}
+
+.landing-tagline {
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.landing-description {
+  font-size: 15px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+.landing-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.landing-nav {
+  display: flex;
+  gap: 20px;
+}
+
+.landing-nav-link {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+}
+
+.landing-nav-link:hover {
+  color: var(--color-accent);
+}

@@ -125,7 +125,7 @@ export default function Chapter() {
       <div style={styles.inner}>
         <nav style={styles.topNav}>
           <div style={styles.breadcrumb}>
-            <Link to="/" style={styles.breadcrumbLink}>Home</Link>
+            <Link to="/content" style={styles.breadcrumbLink}>Stories</Link>
             <span style={styles.breadcrumbSep}>›</span>
             <Link to={`/stories/${story.slug}`} style={styles.breadcrumbLink}>
               {story.title}{story.subtitle ? `: ${story.subtitle}` : ''}

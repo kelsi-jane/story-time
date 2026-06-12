@@ -1,11 +1,5 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
-import { BlobServiceClient } from '@azure/storage-blob';
-
-function getContainerClient() {
-  const connStr = process.env.AZURE_STORAGE_CONNECTION_STRING;
-  if (!connStr) throw new Error('AZURE_STORAGE_CONNECTION_STRING not set');
-  return BlobServiceClient.fromConnectionString(connStr).getContainerClient('user-data');
-}
+import { getBlobStore } from '../lib/storage';
 
 function getCallerUsername(request: HttpRequest): string | null {
   const header = request.headers.get('x-ms-client-principal');
@@ -18,14 +12,6 @@ function getCallerUsername(request: HttpRequest): string | null {
   }
 }
 
-async function streamToString(stream: NodeJS.ReadableStream): Promise<string> {
-  const chunks: Buffer[] = [];
-  for await (const chunk of stream) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-  }
-  return Buffer.concat(chunks).toString('utf-8');
-}
-
 const isDev = process.env.AZURE_FUNCTIONS_ENVIRONMENT === 'Development';
 
 async function getUserPreferences(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
@@ -35,14 +21,12 @@ async function getUserPreferences(request: HttpRequest, context: InvocationConte
     return { status: 401, jsonBody: { message: 'Unauthorized' } };
   }
   try {
-    const blob = getContainerClient().getBlobClient(`${username}/preferences.json`);
-    const download = await blob.download();
-    const text = await streamToString(download.readableStreamBody!);
-    return { status: 200, body: text, headers: { 'Content-Type': 'application/json' } };
-  } catch (err: any) {
-    if (err.statusCode === 404) {
+    const result = await getBlobStore().read('user-data', `${username}/preferences.json`);
+    if (!result) {
       return { status: 404, jsonBody: { message: 'No preferences stored' } };
     }
+    return { status: 200, body: result.content, headers: { 'Content-Type': 'application/json' } };
+  } catch (err: any) {
     context.error('getUserPreferences error:', err);
     return { status: 500, jsonBody: { message: 'Failed to load preferences' } };
   }
@@ -56,12 +40,7 @@ async function putUserPreferences(request: HttpRequest, context: InvocationConte
   }
   try {
     const body = await request.text();
-    const container = getContainerClient();
-    await container.createIfNotExists();
-    const blob = container.getBlockBlobClient(`${username}/preferences.json`);
-    await blob.upload(body, Buffer.byteLength(body, 'utf-8'), {
-      blobHTTPHeaders: { blobContentType: 'application/json' },
-    });
+    await getBlobStore().write('user-data', `${username}/preferences.json`, body, 'application/json');
     return { status: 200, jsonBody: { ok: true } };
   } catch (err: any) {
     context.error('putUserPreferences error:', err);

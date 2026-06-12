@@ -5,6 +5,7 @@ import {
   appendEvent, replayEvents, readEvents, getUserIndex, updateUserIndex,
   PersistedEvent, SlotArea,
 } from '../lib/event-store';
+import { getBlobStore } from '../lib/storage';
 
 // ── Template slot definitions (outline slots only — board zones are always seeded) ──
 
@@ -205,23 +206,8 @@ async function getChapterDraft(request: HttpRequest, context: InvocationContext)
   if (!isAdmin(request)) return { status: 401, jsonBody: { message: 'Unauthorized' } };
   const { projectId, chapterId } = request.params;
   try {
-    const { BlobServiceClient } = await import('@azure/storage-blob');
-    const connStr = process.env.AZURE_STORAGE_CONNECTION_STRING;
-    if (!connStr) throw new Error('AZURE_STORAGE_CONNECTION_STRING not set');
-    const container = BlobServiceClient.fromConnectionString(connStr).getContainerClient('planning-data');
-    await container.createIfNotExists();
-    const blob = container.getBlobClient(`projects/${projectId}/chapters/${chapterId}/draft.md`);
-    try {
-      const download = await blob.download();
-      const chunks: Buffer[] = [];
-      for await (const chunk of download.readableStreamBody!) {
-        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-      }
-      return { status: 200, body: Buffer.concat(chunks).toString('utf-8'), headers: { 'Content-Type': 'text/plain; charset=utf-8' } };
-    } catch (err: any) {
-      if (err.statusCode === 404) return { status: 200, body: '', headers: { 'Content-Type': 'text/plain; charset=utf-8' } };
-      throw err;
-    }
+    const result = await getBlobStore().read('planning-data', `projects/${projectId}/chapters/${chapterId}/draft.md`);
+    return { status: 200, body: result?.content ?? '', headers: { 'Content-Type': 'text/plain; charset=utf-8' } };
   } catch (err: any) {
     context.error('getChapterDraft error:', err);
     return { status: 500, jsonBody: { message: 'Failed to load draft' } };
@@ -233,16 +219,7 @@ async function saveChapterDraft(request: HttpRequest, context: InvocationContext
   const { projectId, chapterId } = request.params;
   try {
     const content = await request.text();
-    const { BlobServiceClient } = await import('@azure/storage-blob');
-    const connStr = process.env.AZURE_STORAGE_CONNECTION_STRING;
-    if (!connStr) throw new Error('AZURE_STORAGE_CONNECTION_STRING not set');
-    const container = BlobServiceClient.fromConnectionString(connStr).getContainerClient('planning-data');
-    await container.createIfNotExists();
-    const blob = container.getBlockBlobClient(`projects/${projectId}/chapters/${chapterId}/draft.md`);
-    await blob.upload(content, Buffer.byteLength(content, 'utf-8'), {
-      blobHTTPHeaders: { blobContentType: 'text/plain; charset=utf-8' },
-      conditions: {},
-    });
+    await getBlobStore().write('planning-data', `projects/${projectId}/chapters/${chapterId}/draft.md`, content, 'text/plain; charset=utf-8');
     return { status: 200, jsonBody: { ok: true } };
   } catch (err: any) {
     context.error('saveChapterDraft error:', err);

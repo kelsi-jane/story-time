@@ -61,7 +61,7 @@ export default function SiteBanner({ onAuth }: Props) {
                 {isAdmin && <Link to="/admin" className="profile-menu-item">Admin</Link>}
                 <Link to="/settings" className="profile-menu-item">Settings</Link>
                 <a
-                  href={import.meta.env.DEV ? '/' : '/.auth/logout?post_logout_redirect_uri=/'}
+                  href={import.meta.env.DEV ? '/content' : '/.auth/logout?post_logout_redirect_uri=/content'}
                   className="profile-menu-item"
                 >
                   Sign out
@@ -71,7 +71,7 @@ export default function SiteBanner({ onAuth }: Props) {
           </div>
         ) : (
           <a
-            href={import.meta.env.DEV ? '#' : `/.auth/login/github?post_login_redirect_uri=${encodeURIComponent('/')}`}
+            href={import.meta.env.DEV ? '#' : `/.auth/login/github?post_login_redirect_uri=${encodeURIComponent('/content')}`}
             className="site-banner-signin"
           >
             Sign in

@@ -1,5 +1,6 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
-import { getTableClient, isAdmin } from '../lib/table-client';
+import { isAdmin } from '../lib/table-client';
+import { getDocumentStore } from '../lib/storage';
 
 interface Chapter {
   id: string;
@@ -52,11 +53,8 @@ function entityToStory(e: Record<string, unknown>, chapters: Chapter[]): Story {
 }
 
 export async function getChaptersForStory(slug: string): Promise<Chapter[]> {
-  const client = getTableClient('Chapters');
   const chapters: Chapter[] = [];
-  for await (const entity of client.listEntities<Record<string, unknown>>({
-    queryOptions: { filter: `PartitionKey eq '${slug}'` },
-  })) {
+  for await (const entity of getDocumentStore().list<Record<string, unknown>>('Chapters', slug)) {
     chapters.push(entityToChapter(entity));
   }
   return chapters.sort((a, b) => a.order - b.order);
@@ -64,12 +62,9 @@ export async function getChaptersForStory(slug: string): Promise<Chapter[]> {
 
 async function getStories(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
   try {
-    const client = getTableClient('Stories');
     const adminCaller = isAdmin(request);
     const stories: Story[] = [];
-    for await (const entity of client.listEntities<Record<string, unknown>>({
-      queryOptions: { filter: `PartitionKey eq 'story'` },
-    })) {
+    for await (const entity of getDocumentStore().list<Record<string, unknown>>('Stories', 'story')) {
       if (!adminCaller && !(entity.publishedAt as string)) continue;
       const chapters = await getChaptersForStory(entity.rowKey as string);
       stories.push(entityToStory(entity, chapters));
@@ -82,7 +77,9 @@ async function getStories(request: HttpRequest, context: InvocationContext): Pro
 }
 
 async function createStory(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-  if (!isAdmin(request)) return { status: 401, jsonBody: { message: 'Unauthorized' } };
+  if (!isAdmin(request)) {
+    return { status: 401, jsonBody: { message: 'Unauthorized' } };
+  }
   try {
     const data = await request.json() as Partial<Story>;
     const id = crypto.randomUUID();
@@ -101,7 +98,7 @@ async function createStory(request: HttpRequest, context: InvocationContext): Pr
       publishedAt: data.publishedAt ?? '',
       coverImageUrl: data.coverImageUrl ?? '',
     };
-    await getTableClient('Stories').createEntity(entity);
+    await getDocumentStore().create('Stories', entity);
     return { status: 201, jsonBody: entityToStory(entity, []) };
   } catch (err: unknown) {
     context.error('createStory error:', err);
