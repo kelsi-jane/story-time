@@ -2,7 +2,7 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/fu
 import { randomUUID } from 'crypto';
 import { isAdmin, getCallerUsername } from '../lib/table-client';
 import {
-  appendEvent, replayEvents, readEvents, getUserIndex, updateUserIndex,
+  appendEvent, removeEvent, replayEvents, readEvents, getUserIndex, updateUserIndex,
   PersistedEvent, SlotArea,
 } from '../lib/event-store';
 
@@ -213,11 +213,16 @@ async function getChapterDraft(request: HttpRequest, context: InvocationContext)
     const blob = container.getBlobClient(`projects/${projectId}/chapters/${chapterId}/draft.md`);
     try {
       const download = await blob.download();
+      const etag = download.etag ?? '';
       const chunks: Buffer[] = [];
       for await (const chunk of download.readableStreamBody!) {
         chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
       }
-      return { status: 200, body: Buffer.concat(chunks).toString('utf-8'), headers: { 'Content-Type': 'text/plain; charset=utf-8' } };
+      return {
+        status: 200,
+        body: Buffer.concat(chunks).toString('utf-8'),
+        headers: { 'Content-Type': 'text/plain; charset=utf-8', 'ETag': etag },
+      };
     } catch (err: any) {
       if (err.statusCode === 404) return { status: 200, body: '', headers: { 'Content-Type': 'text/plain; charset=utf-8' } };
       throw err;
@@ -231,22 +236,105 @@ async function getChapterDraft(request: HttpRequest, context: InvocationContext)
 async function saveChapterDraft(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
   if (!isAdmin(request)) return { status: 401, jsonBody: { message: 'Unauthorized' } };
   const { projectId, chapterId } = request.params;
+  const caller = getCallerUsername(request) ?? 'unknown';
   try {
-    const content = await request.text();
+    let body: { content?: string; note?: string };
+    try {
+      body = await request.json() as { content?: string; note?: string };
+    } catch {
+      return { status: 400, jsonBody: { message: 'Invalid JSON body' } };
+    }
+    const content = body.content ?? '';
+    const snapshotNote = body.note;
+    const ifMatch = request.headers.get('If-Match') ?? undefined;
+    const createSnapshot = request.query.get('snapshot') === 'true';
+
     const { BlobServiceClient } = await import('@azure/storage-blob');
     const connStr = process.env.AZURE_STORAGE_CONNECTION_STRING;
     if (!connStr) throw new Error('AZURE_STORAGE_CONNECTION_STRING not set');
     const container = BlobServiceClient.fromConnectionString(connStr).getContainerClient('planning-data');
     await container.createIfNotExists();
     const blob = container.getBlockBlobClient(`projects/${projectId}/chapters/${chapterId}/draft.md`);
-    await blob.upload(content, Buffer.byteLength(content, 'utf-8'), {
-      blobHTTPHeaders: { blobContentType: 'text/plain; charset=utf-8' },
-      conditions: {},
-    });
-    return { status: 200, jsonBody: { ok: true } };
+
+    let uploadResult;
+    try {
+      uploadResult = await blob.upload(content, Buffer.byteLength(content, 'utf-8'), {
+        blobHTTPHeaders: { blobContentType: 'text/plain; charset=utf-8' },
+        conditions: ifMatch ? { ifMatch } : {},
+      });
+    } catch (err: any) {
+      if (err.statusCode === 412) {
+        return { status: 412, jsonBody: { message: 'conflict' } };
+      }
+      throw err;
+    }
+
+    const newEtag = uploadResult.etag ?? null;
+
+    if (createSnapshot) {
+      const snapshotId = Date.now().toString();
+      const snapshotPath = `projects/${projectId}/chapters/${chapterId}/snapshots/${snapshotId}.md`;
+      const snapshotBlob = container.getBlockBlobClient(snapshotPath);
+      await snapshotBlob.upload(content, Buffer.byteLength(content, 'utf-8'), {
+        blobHTTPHeaders: { blobContentType: 'text/plain; charset=utf-8' },
+      });
+      await appendEvent(projectId, {
+        type: 'ChapterDraftSaved',
+        payload: { chapterId, snapshotPath },
+        id: `evt_${randomUUID().replace(/-/g, '').slice(0, 10)}`,
+        projectId,
+        timestamp: new Date().toISOString(),
+        userId: caller,
+        note: snapshotNote,
+      });
+    }
+
+    return { status: 200, jsonBody: { ok: true, etag: newEtag } };
   } catch (err: any) {
     context.error('saveChapterDraft error:', err);
     return { status: 500, jsonBody: { message: 'Failed to save draft' } };
+  }
+}
+
+async function getChapterDraftHistory(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+  if (!isAdmin(request)) return { status: 401, jsonBody: { message: 'Unauthorized' } };
+  const { projectId, chapterId } = request.params;
+  try {
+    const { events } = await readEvents(projectId);
+    const history = events.filter(
+      e => e.type === 'ChapterDraftSaved' && (e as any).payload?.chapterId === chapterId
+    );
+    return { status: 200, jsonBody: { history } };
+  } catch (err: any) {
+    context.error('getChapterDraftHistory error:', err);
+    return { status: 500, jsonBody: { message: 'Failed to load history' } };
+  }
+}
+
+async function getChapterDraftSnapshot(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+  if (!isAdmin(request)) return { status: 401, jsonBody: { message: 'Unauthorized' } };
+  const { projectId, chapterId, snapshotId } = request.params;
+  try {
+    const { BlobServiceClient } = await import('@azure/storage-blob');
+    const connStr = process.env.AZURE_STORAGE_CONNECTION_STRING;
+    if (!connStr) throw new Error('AZURE_STORAGE_CONNECTION_STRING not set');
+    const container = BlobServiceClient.fromConnectionString(connStr).getContainerClient('planning-data');
+    const snapshotPath = `projects/${projectId}/chapters/${chapterId}/snapshots/${snapshotId}.md`;
+    const blob = container.getBlobClient(snapshotPath);
+    try {
+      const download = await blob.download();
+      const chunks: Buffer[] = [];
+      for await (const chunk of download.readableStreamBody!) {
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+      }
+      return { status: 200, body: Buffer.concat(chunks).toString('utf-8'), headers: { 'Content-Type': 'text/plain; charset=utf-8' } };
+    } catch (err: any) {
+      if (err.statusCode === 404) return { status: 404, jsonBody: { message: 'Snapshot not found' } };
+      throw err;
+    }
+  } catch (err: any) {
+    context.error('getChapterDraftSnapshot error:', err);
+    return { status: 500, jsonBody: { message: 'Failed to load snapshot' } };
   }
 }
 
@@ -260,6 +348,32 @@ async function getProjectEvents(request: HttpRequest, context: InvocationContext
   } catch (err: any) {
     context.error('getProjectEvents error:', err);
     return { status: 500, jsonBody: { message: 'Failed to load events' } };
+  }
+}
+
+async function deleteChapterDraftSnapshot(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+  if (!isAdmin(request)) return { status: 401, jsonBody: { message: 'Unauthorized' } };
+  const { projectId, chapterId, snapshotId } = request.params;
+  try {
+    const { events } = await readEvents(projectId);
+    const event = events.find(
+      e => e.type === 'ChapterDraftSaved' &&
+      (e as any).payload?.chapterId === chapterId &&
+      (e as any).payload?.snapshotPath?.endsWith(`/${snapshotId}.md`)
+    );
+    if (event) {
+      await removeEvent(projectId, event.id);
+      const { BlobServiceClient } = await import('@azure/storage-blob');
+      const connStr = process.env.AZURE_STORAGE_CONNECTION_STRING;
+      if (connStr) {
+        const container = BlobServiceClient.fromConnectionString(connStr).getContainerClient('planning-data');
+        await container.getBlobClient(`projects/${projectId}/chapters/${chapterId}/snapshots/${snapshotId}.md`).deleteIfExists();
+      }
+    }
+    return { status: 200, jsonBody: { ok: true } };
+  } catch (err: any) {
+    context.error('deleteChapterDraftSnapshot error:', err);
+    return { status: 500, jsonBody: { message: 'Failed to delete snapshot' } };
   }
 }
 
@@ -312,4 +426,25 @@ app.http('saveChapterDraft', {
   authLevel: 'anonymous',
   route: 'planning/projects/{projectId}/chapters/{chapterId}/draft',
   handler: saveChapterDraft,
+});
+
+app.http('getChapterDraftHistory', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'planning/projects/{projectId}/chapters/{chapterId}/history',
+  handler: getChapterDraftHistory,
+});
+
+app.http('getChapterDraftSnapshot', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'planning/projects/{projectId}/chapters/{chapterId}/snapshots/{snapshotId}',
+  handler: getChapterDraftSnapshot,
+});
+
+app.http('deleteChapterDraftSnapshot', {
+  methods: ['DELETE'],
+  authLevel: 'anonymous',
+  route: 'planning/projects/{projectId}/chapters/{chapterId}/snapshots/{snapshotId}',
+  handler: deleteChapterDraftSnapshot,
 });

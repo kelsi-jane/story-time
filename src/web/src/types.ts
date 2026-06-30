@@ -129,7 +129,7 @@ export type PaneView =
   | { kind: 'empty' }
   | { kind: 'outline' }
   | { kind: 'notes'; selectedBlockId?: string }
-  | { kind: 'chapter'; chapterId: string; tab?: 'notes' | 'content' | 'preview' };
+  | { kind: 'chapter'; chapterId: string; tab?: 'notes' | 'content' | 'preview' | 'history' };
 
 export type WritingEvent =
   | { type: 'ProjectCreated'; payload: { title: string; authorUsername: string; templateId: string } }
@@ -149,7 +149,8 @@ export type WritingEvent =
   | { type: 'ChapterReordered'; payload: { orderedChapterIds: string[] } }
   | { type: 'ChapterDeleted';   payload: { chapterId: string } }
   | { type: 'ChapterPromoted';    payload: { chapterId: string; title: string; boardBlockId: string } }
-  | { type: 'ChapterLockChanged'; payload: { chapterId: string; locked: boolean } };
+  | { type: 'ChapterLockChanged'; payload: { chapterId: string; locked: boolean } }
+  | { type: 'ChapterDraftSaved'; payload: { chapterId: string; snapshotPath: string } };
 
 export type PersistedEvent = WritingEvent & {
   id: string;

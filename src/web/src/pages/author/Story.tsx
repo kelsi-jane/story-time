@@ -61,6 +61,7 @@ export default function Story() {
     projectId ? readStoredViews(projectId, readStoredPanes(projectId).count) : [{ kind: 'empty' }]
   );
   const [chapterDrafts, setChapterDrafts] = useState<Record<string, string | null>>({});
+  const [chapterDraftEtags, setChapterDraftEtags] = useState<Record<string, string | null>>({});
   const loadingDrafts = useRef<Set<string>>(new Set());
   const containerRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ index: number; startX: number; startValue: number } | null>(null);
@@ -85,9 +86,10 @@ export default function Story() {
       if (loadingDrafts.current.has(view.chapterId)) continue;
       loadingDrafts.current.add(view.chapterId);
       setChapterDrafts(prev => ({ ...prev, [view.chapterId]: null })); // null = loading
-      getChapterDraft(projectId, view.chapterId).then(content => {
+      getChapterDraft(projectId, view.chapterId).then(({ content, etag }) => {
         loadingDrafts.current.delete(view.chapterId);
         setChapterDrafts(prev => ({ ...prev, [view.chapterId]: content }));
+        setChapterDraftEtags(prev => ({ ...prev, [view.chapterId]: etag }));
       });
     }
   }, [paneViews, projectId]);
@@ -217,6 +219,8 @@ export default function Story() {
             showBanner={false}
             controlledDraft={chapterDrafts[chapter.id]}
             onDraftChange={content => setChapterDrafts(prev => ({ ...prev, [chapter.id]: content }))}
+            initialEtag={chapterDraftEtags[chapter.id] ?? null}
+            onEtagChange={etag => setChapterDraftEtags(prev => ({ ...prev, [chapter.id]: etag }))}
             initialTab={view.tab}
             onTabChange={tab => selectView(paneIndex, { kind: 'chapter', chapterId: chapter.id, tab })}
           />

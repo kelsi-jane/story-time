@@ -87,7 +87,8 @@ export type WritingEvent =
   | { type: 'ChapterReordered'; payload: { orderedChapterIds: string[] } }
   | { type: 'ChapterDeleted';   payload: { chapterId: string } }
   | { type: 'ChapterPromoted';    payload: { chapterId: string; title: string; boardBlockId: string } }
-  | { type: 'ChapterLockChanged'; payload: { chapterId: string; locked: boolean } };
+  | { type: 'ChapterLockChanged'; payload: { chapterId: string; locked: boolean } }
+  | { type: 'ChapterDraftSaved'; payload: { chapterId: string; snapshotPath: string } };
 
 export type PersistedEvent = WritingEvent & {
   id: string;
@@ -140,6 +141,27 @@ export async function appendEvent(projectId: string, event: PersistedEvent): Pro
     const { events, etag } = await readEvents(projectId);
     events.push(event);
     const body = JSON.stringify(events, null, 2);
+    const blob = await getBlob(`projects/${projectId}/events.json`);
+    try {
+      await blob.upload(body, Buffer.byteLength(body, 'utf-8'), {
+        blobHTTPHeaders: { blobContentType: 'application/json; charset=utf-8' },
+        conditions: etag ? { ifMatch: etag } : { ifNoneMatch: '*' },
+      });
+      return;
+    } catch (err: any) {
+      if (err.statusCode === 412 && attempt < MAX_RETRIES - 1) continue;
+      throw err;
+    }
+  }
+}
+
+export async function removeEvent(projectId: string, eventId: string): Promise<void> {
+  const MAX_RETRIES = 3;
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    const { events, etag } = await readEvents(projectId);
+    const filtered = events.filter(e => e.id !== eventId);
+    if (filtered.length === events.length) return; // already gone
+    const body = JSON.stringify(filtered, null, 2);
     const blob = await getBlob(`projects/${projectId}/events.json`);
     try {
       await blob.upload(body, Buffer.byteLength(body, 'utf-8'), {
