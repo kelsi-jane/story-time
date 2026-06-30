@@ -40,7 +40,7 @@ jobs:
           app_location: src/web
           api_location: src/api
           output_location: dist
-          skip_app_build: true
+          app_build_command: "npm install && npm run build"
           api_build_command: "npm install && npm run build"
 
   close_pull_request_job:
