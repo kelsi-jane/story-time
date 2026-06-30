@@ -129,7 +129,7 @@ export type PaneView =
   | { kind: 'empty' }
   | { kind: 'outline' }
   | { kind: 'notes'; selectedBlockId?: string }
-  | { kind: 'chapter'; chapterId: string; tab?: 'notes' | 'content' | 'preview' };
+  | { kind: 'chapter'; chapterId: string; tab?: 'notes' | 'content' | 'preview' | 'history' };
 
 export type WritingEvent =
   | { type: 'ProjectCreated'; payload: { title: string; authorUsername: string; templateId: string } }
