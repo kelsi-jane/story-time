@@ -1,6 +1,6 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
 import { randomUUID } from 'crypto';
-import { isAdmin, getCallerUsername } from '../lib/table-client';
+import { isAuthor, getCallerUsername } from '../lib/table-client';
 import {
   appendEvent, removeEvent, replayEvents, readEvents, getUserIndex, updateUserIndex,
   PersistedEvent, SlotArea,
@@ -82,7 +82,7 @@ const TEMPLATE_SLOTS: Record<string, Array<{ id: string; label: string; order: n
 // ── Handlers ──────────────────────────────────────────────────────────────────
 
 async function createProject(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-  if (!isAdmin(request)) return { status: 401, jsonBody: { message: 'Unauthorized' } };
+  if (!isAuthor(request)) return { status: 401, jsonBody: { message: 'Unauthorized' } };
 
   const username = request.params.username;
   const caller = getCallerUsername(request);
@@ -144,7 +144,7 @@ async function createProject(request: HttpRequest, context: InvocationContext): 
 }
 
 async function listProjects(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-  if (!isAdmin(request)) return { status: 401, jsonBody: { message: 'Unauthorized' } };
+  if (!isAuthor(request)) return { status: 401, jsonBody: { message: 'Unauthorized' } };
 
   const username = request.params.username;
   try {
@@ -157,7 +157,7 @@ async function listProjects(request: HttpRequest, context: InvocationContext): P
 }
 
 async function appendProjectEvent(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-  if (!isAdmin(request)) return { status: 401, jsonBody: { message: 'Unauthorized' } };
+  if (!isAuthor(request)) return { status: 401, jsonBody: { message: 'Unauthorized' } };
 
   const projectId = request.params.projectId;
   const caller = getCallerUsername(request) ?? 'unknown';
@@ -189,7 +189,7 @@ async function appendProjectEvent(request: HttpRequest, context: InvocationConte
 }
 
 async function getProjection(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-  if (!isAdmin(request)) return { status: 401, jsonBody: { message: 'Unauthorized' } };
+  if (!isAuthor(request)) return { status: 401, jsonBody: { message: 'Unauthorized' } };
 
   const projectId = request.params.projectId;
   try {
@@ -202,7 +202,7 @@ async function getProjection(request: HttpRequest, context: InvocationContext): 
 }
 
 async function getChapterDraft(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-  if (!isAdmin(request)) return { status: 401, jsonBody: { message: 'Unauthorized' } };
+  if (!isAuthor(request)) return { status: 401, jsonBody: { message: 'Unauthorized' } };
   const { projectId, chapterId } = request.params;
   try {
     const { BlobServiceClient } = await import('@azure/storage-blob');
@@ -234,7 +234,7 @@ async function getChapterDraft(request: HttpRequest, context: InvocationContext)
 }
 
 async function saveChapterDraft(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-  if (!isAdmin(request)) return { status: 401, jsonBody: { message: 'Unauthorized' } };
+  if (!isAuthor(request)) return { status: 401, jsonBody: { message: 'Unauthorized' } };
   const { projectId, chapterId } = request.params;
   const caller = getCallerUsername(request) ?? 'unknown';
   try {
@@ -297,7 +297,7 @@ async function saveChapterDraft(request: HttpRequest, context: InvocationContext
 }
 
 async function getChapterDraftHistory(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-  if (!isAdmin(request)) return { status: 401, jsonBody: { message: 'Unauthorized' } };
+  if (!isAuthor(request)) return { status: 401, jsonBody: { message: 'Unauthorized' } };
   const { projectId, chapterId } = request.params;
   try {
     const { events } = await readEvents(projectId);
@@ -312,7 +312,7 @@ async function getChapterDraftHistory(request: HttpRequest, context: InvocationC
 }
 
 async function getChapterDraftSnapshot(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-  if (!isAdmin(request)) return { status: 401, jsonBody: { message: 'Unauthorized' } };
+  if (!isAuthor(request)) return { status: 401, jsonBody: { message: 'Unauthorized' } };
   const { projectId, chapterId, snapshotId } = request.params;
   try {
     const { BlobServiceClient } = await import('@azure/storage-blob');
@@ -339,7 +339,7 @@ async function getChapterDraftSnapshot(request: HttpRequest, context: Invocation
 }
 
 async function getProjectEvents(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-  if (!isAdmin(request)) return { status: 401, jsonBody: { message: 'Unauthorized' } };
+  if (!isAuthor(request)) return { status: 401, jsonBody: { message: 'Unauthorized' } };
 
   const projectId = request.params.projectId;
   try {
@@ -352,7 +352,7 @@ async function getProjectEvents(request: HttpRequest, context: InvocationContext
 }
 
 async function deleteChapterDraftSnapshot(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-  if (!isAdmin(request)) return { status: 401, jsonBody: { message: 'Unauthorized' } };
+  if (!isAuthor(request)) return { status: 401, jsonBody: { message: 'Unauthorized' } };
   const { projectId, chapterId, snapshotId } = request.params;
   try {
     const { events } = await readEvents(projectId);
