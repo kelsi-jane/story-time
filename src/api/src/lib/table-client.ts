@@ -26,3 +26,16 @@ export function isAdmin(request: HttpRequest): boolean {
   const admins = (process.env.VITE_INITIAL_ADMIN_USERNAMES ?? '').split(',').map((u) => u.trim());
   return admins.includes(caller);
 }
+
+export function isAuthor(request: HttpRequest): boolean {
+  if (isDev) return true;
+  const header = request.headers.get('x-ms-client-principal');
+  if (!header) return false;
+  try {
+    const principal = JSON.parse(Buffer.from(header, 'base64').toString('utf-8'));
+    const roles: string[] = principal.userRoles ?? [];
+    return roles.includes('author');
+  } catch {
+    return false;
+  }
+}

@@ -9,7 +9,7 @@ interface Props {
 }
 
 export default function AuthorLayout({ children, breadcrumb }: Props) {
-  const { user, isAdmin, loading } = useAuth();
+  const { user, isAuthor, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -18,10 +18,10 @@ export default function AuthorLayout({ children, breadcrumb }: Props) {
       if (!import.meta.env.DEV) {
         window.location.href = `/.auth/login/github?post_login_redirect_uri=${encodeURIComponent(window.location.pathname)}`;
       }
-    } else if (!isAdmin) {
+    } else if (!isAuthor) {
       navigate('/unauthorized', { replace: true });
     }
-  }, [loading, user, isAdmin, navigate]);
+  }, [loading, user, isAuthor, navigate]);
 
   if (loading) return (
     <div className="author-shell" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -29,7 +29,7 @@ export default function AuthorLayout({ children, breadcrumb }: Props) {
     </div>
   );
 
-  if (!isAdmin) return null;
+  if (!isAuthor) return null;
 
   return (
     <div className="author-shell">
