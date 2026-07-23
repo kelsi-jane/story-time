@@ -1,14 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ProjectChapter } from '../../types';
 
+type ExportFormat = 'md' | 'pdf';
+
 interface Props {
   chapters: ProjectChapter[];
-  onExport: (chapterIds: string[]) => Promise<void>;
+  onExport: (format: ExportFormat, chapterIds: string[]) => Promise<void>;
 }
 
 export default function ExportControl({ chapters, onExport }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [format, setFormat] = useState<ExportFormat>('md');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [exporting, setExporting] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -23,8 +26,9 @@ export default function ExportControl({ chapters, onExport }: Props) {
     return () => document.removeEventListener('mousedown', handleMouseDown);
   }, []);
 
-  function openPicker() {
+  function openPicker(fmt: ExportFormat) {
     setMenuOpen(false);
+    setFormat(fmt);
     setSelectedIds(new Set(chapters.map(c => c.id)));
     setPickerOpen(true);
   }
@@ -44,7 +48,7 @@ export default function ExportControl({ chapters, onExport }: Props) {
   async function handleExportClick() {
     setExporting(true);
     try {
-      await onExport([...selectedIds]);
+      await onExport(format, [...selectedIds]);
       setPickerOpen(false);
     } finally {
       setExporting(false);
@@ -59,14 +63,14 @@ export default function ExportControl({ chapters, onExport }: Props) {
         </button>
         {menuOpen && (
           <div className="block-detail-slot-picker">
-            <button className="block-detail-slot-option" onClick={openPicker}>
+            <button className="block-detail-slot-option" onClick={() => openPicker('md')}>
               Markdown (.md)
             </button>
             <button className="block-detail-slot-option" disabled>
               Word (.docx) <span className="export-menu-item-badge">soon</span>
             </button>
-            <button className="block-detail-slot-option" disabled>
-              PDF (.pdf) <span className="export-menu-item-badge">soon</span>
+            <button className="block-detail-slot-option" onClick={() => openPicker('pdf')}>
+              PDF (.pdf)
             </button>
             <button className="block-detail-slot-option" disabled>
               Link share <span className="export-menu-item-badge">soon</span>
@@ -85,6 +89,11 @@ export default function ExportControl({ chapters, onExport }: Props) {
               </button>
             </div>
             <div className="modal-body">
+              {format === 'pdf' && (
+                <p className="export-chapter-format-note">
+                  This opens your browser's print dialog — choose "Save as PDF" as the destination.
+                </p>
+              )}
               <div className="export-chapter-select-all">
                 <label>
                   <input
@@ -112,7 +121,7 @@ export default function ExportControl({ chapters, onExport }: Props) {
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={() => setPickerOpen(false)} disabled={exporting}>Cancel</button>
               <button className="btn btn-primary" onClick={handleExportClick} disabled={exporting || selectedIds.size === 0}>
-                {exporting ? 'Exporting…' : 'Export'}
+                {exporting ? 'Exporting…' : format === 'pdf' ? 'Export → print dialog' : 'Export'}
               </button>
             </div>
           </div>

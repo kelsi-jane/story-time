@@ -20,8 +20,10 @@ export function downloadTextFile(filename: string, content: string, mime: string
 
 export function buildChapterMarkdownExport(
   storyTitle: string,
+  author: string,
   chapters: { title: string; content: string }[],
 ): string {
+  const titlePage = `# ${storyTitle}\n\nby ${author}`;
   const sections = chapters.map(c => `## ${c.title}\n\n${c.content}`.trimEnd());
-  return [`# ${storyTitle}`, ...sections].join('\n\n---\n\n');
+  return [titlePage, ...sections].join('\n\n---\n\n');
 }
