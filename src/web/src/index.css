@@ -2160,6 +2160,113 @@ a.chapter-row-title:hover {
   background: var(--color-border);
 }
 
+.board-toolbar-export {
+  position: relative;
+}
+
+.board-toolbar-export .block-detail-slot-picker {
+  left: auto;
+  right: 0;
+}
+
+/* ── Export ───────────────────────────────────────────────────────────────── */
+
+.block-detail-slot-option:disabled {
+  color: var(--color-text-secondary);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.block-detail-slot-option:disabled:hover {
+  background: none;
+}
+
+.export-menu-item-badge {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-left: 6px;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 24px;
+}
+
+.modal-card {
+  background: var(--color-surface);
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  width: 100%;
+  max-width: 480px;
+  overflow: hidden;
+}
+
+.modal-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.modal-header button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--color-text-secondary);
+  line-height: 1;
+}
+
+.modal-body {
+  padding: 16px 18px;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.modal-footer {
+  padding: 12px 18px;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.export-chapter-select-all {
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.export-chapter-select-all label,
+.export-chapter-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.export-chapter-item {
+  padding: 6px 0;
+  font-size: 13px;
+  color: var(--color-text-primary);
+}
+
 /* Board canvas */
 .board-canvas-columns {
   flex: 1;
