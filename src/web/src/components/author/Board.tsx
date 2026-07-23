@@ -31,6 +31,7 @@ interface Props {
   showArchived: boolean;
   layout: 'columns' | 'rows';
   linkedChapterIds?: Set<string>;
+  chapterOrderByBlockId?: Map<string, number>;
   onBlockCreated: (slotId: string, title: string, color: BlockColor) => void;
   onBlockMoved: (blockId: string, fromSlot: string, toSlot: string) => void;
   onBlockClick: (blockId: string) => void;
@@ -44,7 +45,7 @@ interface CreateState {
   color: BlockColor;
 }
 
-export default function Board({ slots, blocks, showArchived, layout, linkedChapterIds, onBlockCreated, onBlockMoved, onBlockClick, onBlockPinToggled, onSlotReordered }: Props) {
+export default function Board({ slots, blocks, showArchived, layout, linkedChapterIds, chapterOrderByBlockId, onBlockCreated, onBlockMoved, onBlockClick, onBlockPinToggled, onSlotReordered }: Props) {
   const [creating, setCreating] = useState<CreateState | null>(null);
   const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
   const [draggingZoneId, setDraggingZoneId] = useState<string | null>(null);
@@ -102,6 +103,16 @@ export default function Board({ slots, blocks, showArchived, layout, linkedChapt
         const zoneBlocks = blocks.filter(b =>
           b.slot === zone.slotId && (b.status === 'active' || (showArchived && b.status === 'archived'))
         );
+        if (zone.slotId === 'chapters' && chapterOrderByBlockId) {
+          zoneBlocks.sort((a, b) => {
+            const oa = chapterOrderByBlockId.get(a.id);
+            const ob = chapterOrderByBlockId.get(b.id);
+            if (oa === undefined && ob === undefined) return 0;
+            if (oa === undefined) return 1;
+            if (ob === undefined) return -1;
+            return oa - ob;
+          });
+        }
         const isCreating = creating?.slotId === zone.slotId;
         const isDragOver = dragOverSlot === zone.slotId;
         const isZoneDragOver = dragOverZoneId === zone.slotId && draggingZoneId !== zone.slotId;

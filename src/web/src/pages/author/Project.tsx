@@ -187,6 +187,11 @@ export default function Project() {
   const linkedChapterIds = new Set(
     projection.chapters.map(c => c.boardBlockId).filter((id): id is string => !!id)
   );
+  const chapterOrderByBlockId = new Map(
+    projection.chapters
+      .filter((c): c is typeof c & { boardBlockId: string } => !!c.boardBlockId)
+      .map(c => [c.boardBlockId, c.order])
+  );
 
   return (
     <div className="board-page-shell">
@@ -252,6 +257,7 @@ export default function Project() {
           showArchived={showArchived}
           layout={boardLayout}
           linkedChapterIds={linkedChapterIds}
+          chapterOrderByBlockId={chapterOrderByBlockId}
           onBlockCreated={handleBlockCreated}
           onBlockMoved={handleBlockMoved}
           onBlockClick={(blockId) => navigate(`/author/projects/${projectId}/blocks/${blockId}`)}
