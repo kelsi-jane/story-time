@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, Link } from 'react-router-dom';
 import SiteBanner from '../../components/SiteBanner';
 import ProjectSidebar from '../../components/author/ProjectSidebar';
@@ -7,6 +8,9 @@ import OutlinePanel from '../../components/author/OutlinePanel';
 import StoryNotesPane from '../../components/author/StoryNotesPane';
 import { getProjection, appendEvent, getChapterDraft } from '../../api/planning';
 import ChapterDetail from '../../components/author/ChapterDetail';
+import ExportControl from '../../components/author/ExportControl';
+import ExportPrintView from '../../components/author/ExportPrintView';
+import { buildChapterMarkdownExport, downloadTextFile, slugify } from '../../lib/export';
 import type { PaneView, Projection } from '../../types';
 
 type PaneCount = 1 | 2 | 3;
@@ -62,6 +66,7 @@ export default function Story() {
   );
   const [chapterDrafts, setChapterDrafts] = useState<Record<string, string | null>>({});
   const [chapterDraftEtags, setChapterDraftEtags] = useState<Record<string, string | null>>({});
+  const [printExport, setPrintExport] = useState<{ storyTitle: string; author: string; chapters: { id: string; title: string; content: string }[] } | null>(null);
   const loadingDrafts = useRef<Set<string>>(new Set());
   const containerRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ index: number; startX: number; startValue: number } | null>(null);
@@ -77,6 +82,23 @@ export default function Story() {
   }, [projectId]);
 
   useEffect(() => { loadProjection(); }, [loadProjection]);
+
+  useEffect(() => {
+    function handleAfterPrint() {
+      setPrintExport(null);
+    }
+    window.addEventListener('afterprint', handleAfterPrint);
+    return () => window.removeEventListener('afterprint', handleAfterPrint);
+  }, []);
+
+  useEffect(() => {
+    if (!printExport) return;
+    let cancelled = false;
+    document.fonts.ready.then(() => {
+      if (!cancelled) window.print();
+    });
+    return () => { cancelled = true; };
+  }, [printExport]);
 
   useEffect(() => {
     if (!projectId) return;
@@ -240,6 +262,21 @@ export default function Story() {
   const activeBlocks = projection.blocks.filter(b => b.status !== 'archived').length;
   const chapters = [...projection.chapters].sort((a, b) => a.order - b.order);
 
+  async function handleExport(format: 'md' | 'pdf', chapterIds: string[]) {
+    if (!projectId || !projection) return;
+    const selected = chapters.filter(c => chapterIds.includes(c.id));
+    const contents = await Promise.all(selected.map(c => getChapterDraft(projectId, c.id)));
+    const exportChapters = selected.map((c, i) => ({ id: c.id, title: c.title, content: contents[i].content }));
+
+    if (format === 'md') {
+      const md = buildChapterMarkdownExport(projection.meta.title, projection.meta.authorUsername, exportChapters);
+      downloadTextFile(`${slugify(projection.meta.title)}.md`, md, 'text/markdown');
+      return;
+    }
+
+    setPrintExport({ storyTitle: projection.meta.title, author: projection.meta.authorUsername, chapters: exportChapters });
+  }
+
   return (
     <div className="board-page-shell">
       <SiteBanner />
@@ -274,6 +311,8 @@ export default function Story() {
                 <i className="ti ti-columns-3" />
               </button>
             </div>
+            <div className="board-toolbar-divider" />
+            <ExportControl chapters={chapters} onExport={handleExport} />
           </div>
 
           <div className="story-pane-area" ref={containerRef}>
@@ -301,6 +340,10 @@ export default function Story() {
           </div>
         </div>
       </div>
+      {printExport && createPortal(
+        <ExportPrintView storyTitle={printExport.storyTitle} author={printExport.author} chapters={printExport.chapters} />,
+        document.body,
+      )}
     </div>
   );
 }

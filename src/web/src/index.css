@@ -2160,6 +2160,219 @@ a.chapter-row-title:hover {
   background: var(--color-border);
 }
 
+.board-toolbar-export {
+  position: relative;
+}
+
+.board-toolbar-export .block-detail-slot-picker {
+  left: auto;
+  right: 0;
+}
+
+/* ── Export ───────────────────────────────────────────────────────────────── */
+
+.block-detail-slot-option:disabled {
+  color: var(--color-text-secondary);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.block-detail-slot-option:disabled:hover {
+  background: none;
+}
+
+.export-menu-item-badge {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-left: 6px;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 24px;
+}
+
+.modal-card {
+  background: var(--color-surface);
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  width: 100%;
+  max-width: 480px;
+  overflow: hidden;
+}
+
+.modal-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.modal-header button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--color-text-secondary);
+  line-height: 1;
+}
+
+.modal-body {
+  padding: 16px 18px;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.modal-footer {
+  padding: 12px 18px;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.export-chapter-format-note {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  background: var(--color-background);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 12px;
+}
+
+.export-chapter-select-all {
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.export-chapter-select-all label,
+.export-chapter-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.export-chapter-item {
+  padding: 6px 0;
+  font-size: 13px;
+  color: var(--color-text-primary);
+}
+
+/* ── PDF print export ────────────────────────────────────────────────────── */
+
+#export-print-root {
+  position: fixed;
+  left: -9999px;
+  top: 0;
+}
+
+.export-print-story-title {
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 28px;
+  color: var(--color-text-primary);
+}
+
+.export-print-story-author {
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  color: var(--color-text-secondary);
+  margin-top: 10px;
+}
+
+.export-print-footer {
+  display: none;
+}
+
+.export-print-chapter-title {
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 24px;
+  color: var(--color-text-primary);
+  letter-spacing: -0.3px;
+  line-height: 1.2;
+  margin-bottom: 20px;
+}
+
+.export-print-chapter-rule {
+  height: 1px;
+  width: 48px;
+  background: var(--color-border);
+  margin-bottom: 20px;
+}
+
+.export-print-prose {
+  font-family: 'Lora', serif;
+  font-size: 17px;
+  line-height: 1.85;
+  color: var(--color-text-primary);
+}
+
+@page {
+  margin: 1in;
+}
+
+@media print {
+  body > *:not(#export-print-root) {
+    display: none !important;
+  }
+
+  #export-print-root {
+    position: static;
+    left: auto;
+    color-adjust: exact;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .export-print-titlepage {
+    break-after: page;
+  }
+
+  .export-print-chapter {
+    break-before: page;
+  }
+
+  .export-print-chapter:first-of-type {
+    break-before: avoid;
+  }
+
+  .artifact,
+  .sms-bubble {
+    break-inside: avoid;
+  }
+
+  .export-print-footer {
+    display: block;
+    position: fixed;
+    bottom: 0.4in;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-family: 'Inter', sans-serif;
+    font-size: 9px;
+    color: var(--color-text-secondary);
+  }
+}
+
 /* Board canvas */
 .board-canvas-columns {
   flex: 1;
